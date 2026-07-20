@@ -1,0 +1,64 @@
+// Rentiq (KirayaPad) — Prisma Schema
+// Unified User model — every user can be buyer and owner simultaneously.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id                   String         @id @default(uuid())
+  email                String         @unique
+  password             String
+  name                 String
+  properties           Property[]
+  conversationsAsBuyer Conversation[] @relation("BuyerConversations")
+  conversationsAsOwner Conversation[] @relation("OwnerConversations")
+  messages             Message[]
+  createdAt            DateTime       @default(now())
+}
+
+model Property {
+  id            String         @id @default(uuid())
+  title         String
+  description   String
+  price         Float
+  type          String         // "RENT" or "SALE"
+  beds          Int
+  baths         Int
+  city          String
+  lat           Float
+  lng           Float
+  mediaUrls     String[]
+  ownerId       String
+  owner         User           @relation(fields: [ownerId], references: [id])
+  conversations Conversation[]
+  createdAt     DateTime       @default(now())
+}
+
+model Conversation {
+  id         String    @id @default(uuid())
+  propertyId String
+  property   Property  @relation(fields: [propertyId], references: [id])
+  buyerId    String
+  buyer      User      @relation("BuyerConversations", fields: [buyerId], references: [id])
+  ownerId    String
+  owner      User      @relation("OwnerConversations", fields: [ownerId], references: [id])
+  messages   Message[]
+  createdAt  DateTime  @default(now())
+
+  @@unique([propertyId, buyerId, ownerId])
+}
+
+model Message {
+  id             String       @id @default(uuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id])
+  senderId       String
+  sender         User         @relation(fields: [senderId], references: [id])
+  text           String
+  createdAt      DateTime     @default(now())
+}
