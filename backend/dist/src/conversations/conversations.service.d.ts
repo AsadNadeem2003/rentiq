@@ -4,17 +4,17 @@ export declare class ConversationsService {
     constructor(prisma: PrismaService);
     createOrGetConversation(propertyId: string, buyerId: string): Promise<{
         property: {
-            title: string;
             city: string;
+            title: string;
             mediaUrls: string[];
         };
         owner: {
-            name: string;
             id: string;
+            name: string;
         };
         buyer: {
-            name: string;
             id: string;
+            name: string;
         };
     } & {
         id: string;
@@ -25,8 +25,8 @@ export declare class ConversationsService {
     }>;
     getUserConversations(userId: string): Promise<({
         property: {
-            title: string;
             city: string;
+            title: string;
             mediaUrls: string[];
         };
         messages: {
@@ -37,12 +37,12 @@ export declare class ConversationsService {
             text: string;
         }[];
         owner: {
-            name: string;
             id: string;
+            name: string;
         };
         buyer: {
-            name: string;
             id: string;
+            name: string;
         };
     } & {
         id: string;
@@ -51,6 +51,30 @@ export declare class ConversationsService {
         propertyId: string;
         buyerId: string;
     })[]>;
+    findOne(conversationId: string, userId: string): Promise<{
+        property: {
+            ownerId: string;
+            price: number;
+            title: string;
+            owner: {
+                name: string;
+            };
+        };
+        owner: {
+            id: string;
+            name: string;
+        };
+        buyer: {
+            id: string;
+            name: string;
+        };
+    } & {
+        id: string;
+        createdAt: Date;
+        ownerId: string;
+        propertyId: string;
+        buyerId: string;
+    }>;
     getMessages(conversationId: string, userId: string, page?: number, limit?: number): Promise<{
         data: {
             id: string;
@@ -65,5 +89,17 @@ export declare class ConversationsService {
             limit: number;
             totalPages: number;
         };
+    }>;
+    createMessage(conversationId: string, userId: string, text: string): Promise<{
+        sender: {
+            id: string;
+            name: string;
+        };
+    } & {
+        id: string;
+        createdAt: Date;
+        conversationId: string;
+        senderId: string;
+        text: string;
     }>;
 }

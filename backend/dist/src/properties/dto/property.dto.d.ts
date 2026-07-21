@@ -6,6 +6,7 @@ export declare class CreatePropertyDto {
     beds: number;
     baths: number;
     city: string;
+    area?: string;
     lat: number;
     lng: number;
 }
@@ -17,6 +18,7 @@ export declare class UpdatePropertyDto {
     beds?: number;
     baths?: number;
     city?: string;
+    area?: string;
     lat?: number;
     lng?: number;
     mediaUrls?: string[];
@@ -29,4 +31,8 @@ export declare class QueryPropertyDto {
     maxPrice?: number;
     page?: number;
     limit?: number;
+    ownerId?: string;
+}
+export declare class UpdatePropertyStatusDto {
+    status: string;
 }

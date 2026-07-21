@@ -22,4 +22,7 @@ export declare class ChatGateway implements OnGatewayConnection, OnGatewayDiscon
         status: string;
         messageId: string;
     }>;
+    handleBroadcastMessage(message: any, client: Socket): Promise<{
+        status: string;
+    } | undefined>;
 }

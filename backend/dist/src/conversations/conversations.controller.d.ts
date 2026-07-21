@@ -6,6 +6,9 @@ export declare class QueryMessagesDto {
     page?: number;
     limit?: number;
 }
+export declare class CreateMessageDto {
+    text: string;
+}
 export declare class ConversationsController {
     private readonly conversationsService;
     constructor(conversationsService: ConversationsService);
@@ -15,17 +18,17 @@ export declare class ConversationsController {
         };
     }): Promise<{
         property: {
-            title: string;
             city: string;
+            title: string;
             mediaUrls: string[];
         };
         owner: {
-            name: string;
             id: string;
+            name: string;
         };
         buyer: {
-            name: string;
             id: string;
+            name: string;
         };
     } & {
         id: string;
@@ -40,8 +43,8 @@ export declare class ConversationsController {
         };
     }): Promise<({
         property: {
-            title: string;
             city: string;
+            title: string;
             mediaUrls: string[];
         };
         messages: {
@@ -52,12 +55,12 @@ export declare class ConversationsController {
             text: string;
         }[];
         owner: {
-            name: string;
             id: string;
+            name: string;
         };
         buyer: {
-            name: string;
             id: string;
+            name: string;
         };
     } & {
         id: string;
@@ -66,6 +69,34 @@ export declare class ConversationsController {
         propertyId: string;
         buyerId: string;
     })[]>;
+    findOne(id: string, req: {
+        user: {
+            id: string;
+        };
+    }): Promise<{
+        property: {
+            ownerId: string;
+            price: number;
+            title: string;
+            owner: {
+                name: string;
+            };
+        };
+        owner: {
+            id: string;
+            name: string;
+        };
+        buyer: {
+            id: string;
+            name: string;
+        };
+    } & {
+        id: string;
+        createdAt: Date;
+        ownerId: string;
+        propertyId: string;
+        buyerId: string;
+    }>;
     getMessages(id: string, query: QueryMessagesDto, req: {
         user: {
             id: string;
@@ -84,5 +115,21 @@ export declare class ConversationsController {
             limit: number;
             totalPages: number;
         };
+    }>;
+    createMessage(id: string, dto: CreateMessageDto, req: {
+        user: {
+            id: string;
+        };
+    }): Promise<{
+        sender: {
+            id: string;
+            name: string;
+        };
+    } & {
+        id: string;
+        createdAt: Date;
+        conversationId: string;
+        senderId: string;
+        text: string;
     }>;
 }

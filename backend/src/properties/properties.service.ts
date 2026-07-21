@@ -39,6 +39,9 @@ export class PropertiesService {
     // Build the Prisma "where" filter dynamically
     const where: Record<string, unknown> = {};
 
+    if (query.ownerId) {
+      where.ownerId = query.ownerId;
+    }
     if (query.city) {
       where.city = { equals: query.city, mode: 'insensitive' };
     }
@@ -154,6 +157,33 @@ export class PropertiesService {
     return this.prisma.property.update({
       where: { id },
       data: dto,
+      include: {
+        owner: {
+          select: { id: true, name: true, email: true },
+        },
+      },
+    });
+  }
+
+  /**
+   * PATCH /properties/:id/status — owner-only status update.
+   */
+  async updateStatus(id: string, status: string, userId: string) {
+    const property = await this.prisma.property.findUnique({
+      where: { id },
+    });
+
+    if (!property) {
+      throw new NotFoundException('Property not found');
+    }
+
+    if (property.ownerId !== userId) {
+      throw new ForbiddenException('You can only edit your own properties');
+    }
+
+    return this.prisma.property.update({
+      where: { id },
+      data: { status },
       include: {
         owner: {
           select: { id: true, name: true, email: true },

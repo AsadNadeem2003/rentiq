@@ -66,6 +66,23 @@ let ConversationsService = class ConversationsService {
             orderBy: { createdAt: 'desc' },
         });
     }
+    async findOne(conversationId, userId) {
+        const conversation = await this.prisma.conversation.findUnique({
+            where: { id: conversationId },
+            include: {
+                property: { select: { title: true, price: true, ownerId: true, owner: { select: { name: true } } } },
+                buyer: { select: { id: true, name: true } },
+                owner: { select: { id: true, name: true } },
+            },
+        });
+        if (!conversation) {
+            throw new common_1.NotFoundException('Conversation not found');
+        }
+        if (conversation.buyerId !== userId && conversation.ownerId !== userId) {
+            throw new common_1.ForbiddenException('You do not have access to this conversation');
+        }
+        return conversation;
+    }
     async getMessages(conversationId, userId, page = 1, limit = 50) {
         const conversation = await this.prisma.conversation.findUnique({
             where: { id: conversationId },
@@ -95,6 +112,29 @@ let ConversationsService = class ConversationsService {
                 totalPages: Math.ceil(total / limit),
             },
         };
+    }
+    async createMessage(conversationId, userId, text) {
+        const conversation = await this.prisma.conversation.findUnique({
+            where: { id: conversationId },
+        });
+        if (!conversation) {
+            throw new common_1.NotFoundException('Conversation not found');
+        }
+        if (conversation.buyerId !== userId && conversation.ownerId !== userId) {
+            throw new common_1.ForbiddenException('You do not have access to this conversation');
+        }
+        return this.prisma.message.create({
+            data: {
+                conversationId,
+                senderId: userId,
+                text,
+            },
+            include: {
+                sender: {
+                    select: { id: true, name: true },
+                },
+            },
+        });
     }
 };
 exports.ConversationsService = ConversationsService;

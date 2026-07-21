@@ -1,6 +1,6 @@
 import { PropertiesService } from './properties.service';
 import { SupabaseService } from './supabase.service';
-import { CreatePropertyDto, UpdatePropertyDto, QueryPropertyDto } from './dto/property.dto';
+import { CreatePropertyDto, UpdatePropertyDto, QueryPropertyDto, UpdatePropertyStatusDto } from './dto/property.dto';
 export declare class PropertiesController {
     private readonly propertiesService;
     private readonly supabaseService;
@@ -8,13 +8,12 @@ export declare class PropertiesController {
     findAll(query: QueryPropertyDto): Promise<{
         data: ({
             owner: {
+                id: string;
                 email: string;
                 name: string;
-                id: string;
             };
         } & {
             id: string;
-            createdAt: Date;
             title: string;
             description: string;
             price: number;
@@ -22,10 +21,12 @@ export declare class PropertiesController {
             beds: number;
             baths: number;
             city: string;
+            area: string | null;
             lat: number;
             lng: number;
             mediaUrls: string[];
             ownerId: string;
+            createdAt: Date;
         })[];
         meta: {
             total: number;
@@ -36,13 +37,12 @@ export declare class PropertiesController {
     }>;
     findOne(id: string): Promise<{
         owner: {
+            id: string;
             email: string;
             name: string;
-            id: string;
         };
     } & {
         id: string;
-        createdAt: Date;
         title: string;
         description: string;
         price: number;
@@ -50,10 +50,12 @@ export declare class PropertiesController {
         beds: number;
         baths: number;
         city: string;
+        area: string | null;
         lat: number;
         lng: number;
         mediaUrls: string[];
         ownerId: string;
+        createdAt: Date;
     }>;
     create(dto: CreatePropertyDto, req: {
         user: {
@@ -61,13 +63,12 @@ export declare class PropertiesController {
         };
     }, files: Express.Multer.File[]): Promise<{
         owner: {
+            id: string;
             email: string;
             name: string;
-            id: string;
         };
     } & {
         id: string;
-        createdAt: Date;
         title: string;
         description: string;
         price: number;
@@ -75,10 +76,12 @@ export declare class PropertiesController {
         beds: number;
         baths: number;
         city: string;
+        area: string | null;
         lat: number;
         lng: number;
         mediaUrls: string[];
         ownerId: string;
+        createdAt: Date;
     }>;
     update(id: string, dto: UpdatePropertyDto, req: {
         user: {
@@ -86,13 +89,12 @@ export declare class PropertiesController {
         };
     }): Promise<{
         owner: {
+            id: string;
             email: string;
             name: string;
-            id: string;
         };
     } & {
         id: string;
-        createdAt: Date;
         title: string;
         description: string;
         price: number;
@@ -100,10 +102,32 @@ export declare class PropertiesController {
         beds: number;
         baths: number;
         city: string;
+        area: string | null;
         lat: number;
         lng: number;
         mediaUrls: string[];
         ownerId: string;
+        createdAt: Date;
+    }>;
+    updateStatus(id: string, dto: UpdatePropertyStatusDto, req: {
+        user: {
+            id: string;
+        };
+    }): Promise<{
+        id: string;
+        title: string;
+        description: string;
+        price: number;
+        type: string;
+        beds: number;
+        baths: number;
+        city: string;
+        area: string | null;
+        lat: number;
+        lng: number;
+        mediaUrls: string[];
+        ownerId: string;
+        createdAt: Date;
     }>;
     remove(id: string, req: {
         user: {

@@ -34,6 +34,8 @@ let ChatGateway = class ChatGateway {
             }
             const payload = this.jwtService.verify(token);
             client.data.userId = payload.sub;
+            await client.join(`user:${payload.sub}`);
+            console.log(`User ${payload.sub} connected and joined personal room`);
         }
         catch (error) {
             console.error('Socket authentication failed:', error);
@@ -62,6 +64,9 @@ let ChatGateway = class ChatGateway {
         const userId = client.data.userId;
         const conversation = await this.prisma.conversation.findUnique({
             where: { id: conversationId },
+            include: {
+                property: { select: { title: true } },
+            },
         });
         if (!conversation || (conversation.buyerId !== userId && conversation.ownerId !== userId)) {
             throw new websockets_1.WsException('Unauthorized to send messages in this conversation');
@@ -79,7 +84,42 @@ let ChatGateway = class ChatGateway {
             },
         });
         this.server.to(`conversation:${conversationId}`).emit('newMessage', message);
+        const recipientId = conversation.buyerId === userId ? conversation.ownerId : conversation.buyerId;
+        this.server.to(`user:${recipientId}`).emit('notification', {
+            type: 'new_message',
+            conversationId,
+            senderName: message.sender.name,
+            propertyTitle: conversation.property.title,
+            text: message.text,
+            createdAt: message.createdAt,
+        });
         return { status: 'ok', messageId: message.id };
+    }
+    async handleBroadcastMessage(message, client) {
+        const userId = client.data.userId;
+        if (!message || !message.conversationId)
+            return;
+        const conversation = await this.prisma.conversation.findUnique({
+            where: { id: message.conversationId },
+            include: {
+                property: { select: { title: true } },
+            },
+        });
+        if (!conversation || (conversation.buyerId !== userId && conversation.ownerId !== userId)) {
+            throw new websockets_1.WsException('Unauthorized to broadcast in this conversation');
+        }
+        client.broadcast.to(`conversation:${message.conversationId}`).emit('newMessage', message);
+        const recipientId = conversation.buyerId === userId ? conversation.ownerId : conversation.buyerId;
+        const senderName = message.sender?.name || 'Someone';
+        this.server.to(`user:${recipientId}`).emit('notification', {
+            type: 'new_message',
+            conversationId: message.conversationId,
+            senderName,
+            propertyTitle: conversation.property.title,
+            text: message.text,
+            createdAt: message.createdAt,
+        });
+        return { status: 'ok' };
     }
 };
 exports.ChatGateway = ChatGateway;
@@ -104,6 +144,14 @@ __decorate([
     __metadata("design:paramtypes", [String, String, socket_io_1.Socket]),
     __metadata("design:returntype", Promise)
 ], ChatGateway.prototype, "handleSendMessage", null);
+__decorate([
+    (0, websockets_1.SubscribeMessage)('broadcastMessage'),
+    __param(0, (0, websockets_1.MessageBody)()),
+    __param(1, (0, websockets_1.ConnectedSocket)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, socket_io_1.Socket]),
+    __metadata("design:returntype", Promise)
+], ChatGateway.prototype, "handleBroadcastMessage", null);
 exports.ChatGateway = ChatGateway = __decorate([
     (0, websockets_1.WebSocketGateway)({
         cors: {

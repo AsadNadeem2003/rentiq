@@ -27,9 +27,11 @@ model Property {
   description   String
   price         Float
   type          String         // "RENT" or "SALE"
+  status        String         @default("AVAILABLE") // "AVAILABLE", "SOLD", "RENTED"
   beds          Int
   baths         Int
   city          String
+  area          String?        // Specific neighborhood/locality (e.g., "Muslim Town", "DHA Phase 5")
   lat           Float
   lng           Float
   mediaUrls     String[]

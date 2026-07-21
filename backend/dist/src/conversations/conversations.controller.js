@@ -12,7 +12,7 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ConversationsController = exports.QueryMessagesDto = exports.CreateConversationDto = void 0;
+exports.ConversationsController = exports.CreateMessageDto = exports.QueryMessagesDto = exports.CreateConversationDto = void 0;
 const common_1 = require("@nestjs/common");
 const conversations_service_1 = require("./conversations.service");
 const jwt_auth_guard_1 = require("../auth/guards/jwt-auth.guard");
@@ -42,6 +42,15 @@ __decorate([
     (0, class_transformer_1.Type)(() => Number),
     __metadata("design:type", Number)
 ], QueryMessagesDto.prototype, "limit", void 0);
+class CreateMessageDto {
+    text;
+}
+exports.CreateMessageDto = CreateMessageDto;
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsNotEmpty)(),
+    __metadata("design:type", String)
+], CreateMessageDto.prototype, "text", void 0);
 let ConversationsController = class ConversationsController {
     conversationsService;
     constructor(conversationsService) {
@@ -53,8 +62,14 @@ let ConversationsController = class ConversationsController {
     findAll(req) {
         return this.conversationsService.getUserConversations(req.user.id);
     }
+    findOne(id, req) {
+        return this.conversationsService.findOne(id, req.user.id);
+    }
     getMessages(id, query, req) {
         return this.conversationsService.getMessages(id, req.user.id, query.page, query.limit);
+    }
+    createMessage(id, dto, req) {
+        return this.conversationsService.createMessage(id, req.user.id, dto.text);
     }
 };
 exports.ConversationsController = ConversationsController;
@@ -74,6 +89,14 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], ConversationsController.prototype, "findAll", null);
 __decorate([
+    (0, common_1.Get)(':id'),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", void 0)
+], ConversationsController.prototype, "findOne", null);
+__decorate([
     (0, common_1.Get)(':id/messages'),
     __param(0, (0, common_1.Param)('id')),
     __param(1, (0, common_1.Query)()),
@@ -82,6 +105,15 @@ __decorate([
     __metadata("design:paramtypes", [String, QueryMessagesDto, Object]),
     __metadata("design:returntype", void 0)
 ], ConversationsController.prototype, "getMessages", null);
+__decorate([
+    (0, common_1.Post)(':id/messages'),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Body)()),
+    __param(2, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, CreateMessageDto, Object]),
+    __metadata("design:returntype", void 0)
+], ConversationsController.prototype, "createMessage", null);
 exports.ConversationsController = ConversationsController = __decorate([
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     (0, common_1.Controller)('conversations'),

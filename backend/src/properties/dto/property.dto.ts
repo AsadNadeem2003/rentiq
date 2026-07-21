@@ -49,6 +49,10 @@ export class CreatePropertyDto {
   @IsNotEmpty()
   city!: string;
 
+  @IsOptional()
+  @IsString()
+  area?: string;
+
   @Type(() => Number)
   @IsNumber()
   lat!: number;
@@ -100,6 +104,10 @@ export class UpdatePropertyDto {
   @IsString()
   @IsNotEmpty()
   city?: string;
+
+  @IsOptional()
+  @IsString()
+  area?: string;
 
   @IsOptional()
   @Type(() => Number)
@@ -160,4 +168,17 @@ export class QueryPropertyDto {
   @IsInt()
   @Min(1)
   limit?: number;
+
+  @IsOptional()
+  @IsString()
+  ownerId?: string;
+}
+
+/**
+ * DTO for PATCH /properties/:id/status
+ */
+export class UpdatePropertyStatusDto {
+  @IsString()
+  @IsIn(['AVAILABLE', 'SOLD', 'RENTED'])
+  status!: string;
 }

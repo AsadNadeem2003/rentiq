@@ -1,170 +1,254 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
-import axios from "axios";
+import { useEffect, useState, useRef, use } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useSocket } from "@/contexts/SocketContext";
 import { useRouter } from "next/navigation";
+import axios from "axios";
 import { io, Socket } from "socket.io-client";
-import { Send, Loader2 } from "lucide-react";
+import Link from "next/link";
+import { Send, Loader2, ArrowLeft } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Card } from "@/components/ui/card";
 
 interface Message {
   id: string;
   text: string;
   senderId: string;
   createdAt: string;
-  sender?: {
-    id: string;
-    name: string;
-  };
 }
 
-export default function ChatPage({ params }: { params: { id: string } }) {
-  const { token, isAuthenticated } = useAuth();
+interface Conversation {
+  id: string;
+  propertyId: string;
+  property: {
+    title: string;
+    price: number;
+    ownerId: string;
+    owner: { name: string };
+  };
+  buyer: { name: string; id: string };
+  owner: { name: string; id: string };
+}
+
+export default function ChatRoomPage({ params }: { params: Promise<{ id: string }> }) {
+  const resolvedParams = use(params);
+  const id = resolvedParams.id;
+
+  const { token, isAuthenticated, user } = useAuth();
+  const { setActiveConversation } = useSocket();
   const router = useRouter();
   
+  const [conversation, setConversation] = useState<Conversation | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
-  const [text, setText] = useState("");
-  const [loading, setLoading] = useState(true);
+  const [newMessage, setNewMessage] = useState("");
   const [socket, setSocket] = useState<Socket | null>(null);
-  const [myUserId, setMyUserId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [sending, setSending] = useState(false);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Redirect if not logged in
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
   useEffect(() => {
-    if (!isAuthenticated && typeof window !== "undefined") {
+    scrollToBottom();
+  }, [messages]);
+
+  useEffect(() => {
+    if (!isAuthenticated) {
       router.push("/login");
+      return;
     }
-  }, [isAuthenticated, router]);
 
-  // Decode JWT to get user ID simply
-  useEffect(() => {
-    if (token) {
-      try {
-        const payload = JSON.parse(atob(token.split('.')[1]));
-        setMyUserId(payload.sub);
-      } catch (e) {
-        console.error("Failed to decode token");
-      }
-    }
-  }, [token]);
+    // Tell SocketContext we're viewing this conversation (suppress notifications)
+    setActiveConversation(id);
 
-  // Fetch initial history
-  useEffect(() => {
-    const fetchHistory = async () => {
+    const fetchChatData = async () => {
       try {
-        const response = await axios.get(
-          `${process.env.NEXT_PUBLIC_API_URL}/conversations/${params.id}/messages?limit=100`,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-        setMessages(response.data.data);
+        const [convRes, msgsRes] = await Promise.all([
+          axios.get(`${process.env.NEXT_PUBLIC_API_URL}/conversations/${id}`, {
+            headers: { Authorization: `Bearer ${token}` }
+          }),
+          axios.get(`${process.env.NEXT_PUBLIC_API_URL}/conversations/${id}/messages`, {
+            headers: { Authorization: `Bearer ${token}` }
+          })
+        ]);
+        setConversation(convRes.data);
+        setMessages(msgsRes.data.data || []);
       } catch (error) {
-        console.error("Failed to fetch messages", error);
+        console.error("Failed to load chat", error);
+        alert("Failed to load conversation");
+        router.push("/dashboard");
       } finally {
         setLoading(false);
       }
     };
 
-    if (token) {
-      fetchHistory();
-    }
-  }, [params.id, token]);
+    fetchChatData();
 
-  // Setup Socket.io
-  useEffect(() => {
-    if (!token) return;
-
-    const newSocket = io(process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:3001", {
+    // Initialize Socket.io
+    const socketInstance = io(process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || "http://localhost:3001", {
       auth: { token },
-      transports: ["websocket"], // force websocket
+      transports: ["websocket"],
     });
 
-    newSocket.on("connect", () => {
-      console.log("Connected to chat gateway");
-      newSocket.emit("joinRoom", { conversationId: params.id });
+    socketInstance.on("connect", () => {
+      console.log("Connected to chat server");
+      socketInstance.emit("joinRoom", { conversationId: id });
     });
 
-    newSocket.on("newMessage", (message: Message) => {
+    socketInstance.on("newMessage", (message: Message) => {
       setMessages((prev) => {
-        // Prevent duplicate if optimistic update already added it
-        if (prev.find((m) => m.id === message.id)) return prev;
+        // Prevent duplicate messages
+        if (prev.find(m => m.id === message.id)) return prev;
         return [...prev, message];
       });
+      setSending(false);
     });
 
-    setSocket(newSocket);
+    setSocket(socketInstance);
 
     return () => {
-      newSocket.disconnect();
+      socketInstance.disconnect();
+      setActiveConversation(null); // Re-enable notifications when leaving chat
     };
-  }, [params.id, token]);
+  }, [isAuthenticated, id, token, router]);
 
-  // Scroll to bottom
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
-
-  const handleSend = (e: React.FormEvent) => {
+  const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!text.trim() || !socket) return;
+    if (!newMessage.trim() || !socket || sending) return;
 
-    // We do an optimistic send over socket (which DB-writes first then broadcasts back)
-    socket.emit("sendMessage", { conversationId: params.id, text });
-    setText("");
+    const text = newMessage.trim();
+    setNewMessage(""); // Optimistic UI clear
+    setSending(true);
+
+    try {
+      // 1. Save to database via REST API
+      const response = await axios.post(
+        `${process.env.NEXT_PUBLIC_API_URL}/conversations/${id}/messages`,
+        { text },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      
+      const savedMessage = response.data;
+      
+      // 2. Append to local state immediately
+      setMessages((prev) => [...prev, savedMessage]);
+      setSending(false);
+
+      // 3. Broadcast to other users in the room
+      // Since the REST API already saved it, we just need the gateway to broadcast it.
+      // But the gateway's sendMessage ALSO saves to DB. 
+      // Actually, we can just use the socket to emit the saved message, or use a new event.
+      // For now, let's just let the gateway save it again? No, that would duplicate.
+      // Let's modify the frontend to emit a new 'broadcastMessage' event or we just rely on REST.
+      // Wait, if I just use socket.emit("sendMessage"), I don't need the REST call. 
+      // Let's stick to socket.emit("sendMessage", { conversationId: id, text }) 
+      // BUT if it fails silently, the user gets stuck.
+      socket.emit("broadcastMessage", savedMessage);
+      
+    } catch (error) {
+      console.error("Failed to send message", error);
+      alert("Failed to send message. Please try again.");
+      setSending(false);
+    }
   };
 
   if (loading) {
-    return <div className="flex h-screen items-center justify-center"><Loader2 className="animate-spin" /></div>;
+    return <div className="flex h-[calc(100vh-64px)] items-center justify-center"><Loader2 className="animate-spin mr-2" /> Loading chat...</div>;
   }
 
-  return (
-    <div className="flex h-[calc(100vh-64px)] flex-col bg-gray-50 max-w-4xl mx-auto border-x shadow-sm">
-      <div className="bg-white border-b p-4 shadow-sm flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-bold">Chat Thread</h1>
-          <p className="text-xs text-gray-500 font-mono">ID: {params.id}</p>
-        </div>
-      </div>
-      
-      <div className="flex-1 p-4 overflow-y-auto space-y-4">
-        {messages.length === 0 ? (
-          <div className="text-center text-sm text-gray-400 mt-10">
-            No messages yet. Say hello!
-          </div>
-        ) : (
-          messages.map((msg, i) => {
-            const isMe = msg.senderId === myUserId;
-            return (
-              <div key={msg.id || i} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
-                <div className={`max-w-[70%] rounded-2xl px-4 py-2 ${isMe ? 'bg-blue-600 text-white rounded-tr-sm' : 'bg-white border text-gray-800 rounded-tl-sm shadow-sm'}`}>
-                  {!isMe && <p className="text-xs text-gray-400 font-bold mb-1">{msg.sender?.name || "User"}</p>}
-                  <p className="whitespace-pre-wrap">{msg.text}</p>
-                </div>
-              </div>
-            );
-          })
-        )}
-        <div ref={messagesEndRef} />
-      </div>
+  if (!conversation || !user) return null;
 
-      <div className="p-4 bg-white border-t">
-        <form onSubmit={handleSend} className="flex gap-2">
-          <input 
-            type="text" 
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            placeholder="Type a message..." 
-            className="flex-1 border rounded-full px-5 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50"
-          />
-          <button 
-            type="submit"
-            disabled={!text.trim()}
-            className="bg-blue-600 text-white p-3 rounded-full hover:bg-blue-700 disabled:opacity-50 transition flex items-center justify-center"
-          >
-            <Send size={20} />
-          </button>
-        </form>
-      </div>
+  const isOwner = user.sub === conversation.property.ownerId;
+  const otherPersonName = isOwner ? conversation.buyer?.name : conversation.owner?.name;
+
+  return (
+    <div className="max-w-4xl mx-auto h-[calc(100vh-64px)] p-4 flex flex-col">
+      <Card className="flex-1 flex flex-col overflow-hidden border-0 shadow-lg bg-white rounded-xl">
+        
+        {/* Chat Header */}
+        <div className="h-20 border-b bg-gray-50/80 px-6 flex items-center justify-between shadow-sm z-10 shrink-0">
+          <div className="flex items-center gap-4">
+            <Link href="/dashboard" className="text-gray-400 hover:text-gray-600 transition-colors">
+              <ArrowLeft size={24} />
+            </Link>
+            <Avatar className="h-10 w-10 border shadow-sm">
+              <AvatarFallback className="bg-primary/10 text-primary font-bold">
+                {otherPersonName?.charAt(0).toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
+            <div>
+              <h2 className="font-bold text-lg leading-tight">{otherPersonName}</h2>
+              <Link href={`/properties/${conversation.propertyId}`} className="text-sm text-primary hover:underline truncate max-w-[200px] md:max-w-xs block font-medium">
+                {conversation.property.title}
+              </Link>
+            </div>
+          </div>
+          <div className="hidden md:block text-right">
+            <p className="text-xs text-muted-foreground uppercase font-semibold tracking-wider">Asking Price</p>
+            <p className="font-bold text-gray-900">PKR {conversation.property.price.toLocaleString()}</p>
+          </div>
+        </div>
+
+        {/* Message History */}
+        <div className="flex-1 overflow-y-auto p-6 bg-gray-50/30 space-y-4">
+          {messages.length === 0 ? (
+            <div className="h-full flex flex-col items-center justify-center text-gray-400 space-y-4">
+              <Avatar className="h-16 w-16 opacity-50"><AvatarFallback>?</AvatarFallback></Avatar>
+              <p className="text-sm font-medium">Send a message to start the conversation</p>
+            </div>
+          ) : (
+            messages.map((msg) => {
+              const isMe = msg.senderId === user.sub;
+              return (
+                <div key={msg.id} className={`flex ${isMe ? "justify-end" : "justify-start"}`}>
+                  <div 
+                    className={`max-w-[75%] px-5 py-3 rounded-2xl shadow-sm text-sm md:text-base ${
+                      isMe 
+                        ? "bg-primary text-primary-foreground rounded-tr-sm" 
+                        : "bg-white border text-gray-800 rounded-tl-sm"
+                    }`}
+                  >
+                    <p className="leading-relaxed whitespace-pre-wrap">{msg.text}</p>
+                    <p className={`text-[10px] mt-1.5 font-medium ${isMe ? "text-primary-foreground/70 text-right" : "text-gray-400"}`}>
+                      {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </p>
+                  </div>
+                </div>
+              );
+            })
+          )}
+          <div ref={messagesEndRef} />
+        </div>
+
+        {/* Input Area */}
+        <div className="p-4 bg-white border-t shrink-0">
+          <form onSubmit={handleSendMessage} className="flex gap-3 max-w-full relative">
+            <Input
+              type="text"
+              value={newMessage}
+              onChange={(e) => setNewMessage(e.target.value)}
+              placeholder="Type a message..."
+              className="flex-1 h-12 rounded-full pl-6 pr-14 bg-gray-50 border-gray-200 focus-visible:ring-primary shadow-inner"
+              disabled={sending}
+            />
+            <Button 
+              type="submit" 
+              disabled={!newMessage.trim() || sending} 
+              size="icon"
+              className="absolute right-1 top-1 h-10 w-10 rounded-full shadow-md"
+            >
+              <Send size={18} className="ml-1" />
+            </Button>
+          </form>
+        </div>
+
+      </Card>
     </div>
   );
 }

@@ -22,6 +22,9 @@ let PropertiesService = class PropertiesService {
         const limit = query.limit ?? 12;
         const skip = (page - 1) * limit;
         const where = {};
+        if (query.ownerId) {
+            where.ownerId = query.ownerId;
+        }
         if (query.city) {
             where.city = { equals: query.city, mode: 'insensitive' };
         }
@@ -113,6 +116,26 @@ let PropertiesService = class PropertiesService {
         return this.prisma.property.update({
             where: { id },
             data: dto,
+            include: {
+                owner: {
+                    select: { id: true, name: true, email: true },
+                },
+            },
+        });
+    }
+    async updateStatus(id, status, userId) {
+        const property = await this.prisma.property.findUnique({
+            where: { id },
+        });
+        if (!property) {
+            throw new common_1.NotFoundException('Property not found');
+        }
+        if (property.ownerId !== userId) {
+            throw new common_1.ForbiddenException('You can only edit your own properties');
+        }
+        return this.prisma.property.update({
+            where: { id },
+            data: { status },
             include: {
                 owner: {
                     select: { id: true, name: true, email: true },

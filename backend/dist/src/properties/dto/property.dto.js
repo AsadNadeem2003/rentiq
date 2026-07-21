@@ -9,7 +9,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.QueryPropertyDto = exports.UpdatePropertyDto = exports.CreatePropertyDto = void 0;
+exports.UpdatePropertyStatusDto = exports.QueryPropertyDto = exports.UpdatePropertyDto = exports.CreatePropertyDto = void 0;
 const class_validator_1 = require("class-validator");
 const class_transformer_1 = require("class-transformer");
 class CreatePropertyDto {
@@ -20,6 +20,7 @@ class CreatePropertyDto {
     beds;
     baths;
     city;
+    area;
     lat;
     lng;
 }
@@ -63,6 +64,11 @@ __decorate([
     __metadata("design:type", String)
 ], CreatePropertyDto.prototype, "city", void 0);
 __decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], CreatePropertyDto.prototype, "area", void 0);
+__decorate([
     (0, class_transformer_1.Type)(() => Number),
     (0, class_validator_1.IsNumber)(),
     __metadata("design:type", Number)
@@ -80,6 +86,7 @@ class UpdatePropertyDto {
     beds;
     baths;
     city;
+    area;
     lat;
     lng;
     mediaUrls;
@@ -132,6 +139,11 @@ __decorate([
 ], UpdatePropertyDto.prototype, "city", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], UpdatePropertyDto.prototype, "area", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
     (0, class_transformer_1.Type)(() => Number),
     (0, class_validator_1.IsNumber)(),
     __metadata("design:type", Number)
@@ -156,6 +168,7 @@ class QueryPropertyDto {
     maxPrice;
     page;
     limit;
+    ownerId;
 }
 exports.QueryPropertyDto = QueryPropertyDto;
 __decorate([
@@ -204,4 +217,18 @@ __decorate([
     (0, class_validator_1.Min)(1),
     __metadata("design:type", Number)
 ], QueryPropertyDto.prototype, "limit", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], QueryPropertyDto.prototype, "ownerId", void 0);
+class UpdatePropertyStatusDto {
+    status;
+}
+exports.UpdatePropertyStatusDto = UpdatePropertyStatusDto;
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsIn)(['AVAILABLE', 'SOLD', 'RENTED']),
+    __metadata("design:type", String)
+], UpdatePropertyStatusDto.prototype, "status", void 0);
 //# sourceMappingURL=property.dto.js.map

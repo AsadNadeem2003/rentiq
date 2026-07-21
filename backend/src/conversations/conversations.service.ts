@@ -70,6 +70,30 @@ export class ConversationsService {
   }
 
   /**
+   * Fetch a single conversation.
+   */
+  async findOne(conversationId: string, userId: string) {
+    const conversation = await this.prisma.conversation.findUnique({
+      where: { id: conversationId },
+      include: {
+        property: { select: { title: true, price: true, ownerId: true, owner: { select: { name: true } } } },
+        buyer: { select: { id: true, name: true } },
+        owner: { select: { id: true, name: true } },
+      },
+    });
+
+    if (!conversation) {
+      throw new NotFoundException('Conversation not found');
+    }
+
+    if (conversation.buyerId !== userId && conversation.ownerId !== userId) {
+      throw new ForbiddenException('You do not have access to this conversation');
+    }
+
+    return conversation;
+  }
+
+  /**
    * Fetch messages for a conversation, ensuring the user is a participant.
    */
   async getMessages(conversationId: string, userId: string, page: number = 1, limit: number = 50) {
@@ -106,5 +130,35 @@ export class ConversationsService {
         totalPages: Math.ceil(total / limit),
       },
     };
+  }
+
+  /**
+   * Create a message via REST endpoint
+   */
+  async createMessage(conversationId: string, userId: string, text: string) {
+    const conversation = await this.prisma.conversation.findUnique({
+      where: { id: conversationId },
+    });
+
+    if (!conversation) {
+      throw new NotFoundException('Conversation not found');
+    }
+
+    if (conversation.buyerId !== userId && conversation.ownerId !== userId) {
+      throw new ForbiddenException('You do not have access to this conversation');
+    }
+
+    return this.prisma.message.create({
+      data: {
+        conversationId,
+        senderId: userId,
+        text,
+      },
+      include: {
+        sender: {
+          select: { id: true, name: true },
+        },
+      },
+    });
   }
 }

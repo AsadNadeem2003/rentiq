@@ -45,6 +45,9 @@ let PropertiesController = class PropertiesController {
     update(id, dto, req) {
         return this.propertiesService.update(id, dto, req.user.id);
     }
+    updateStatus(id, dto, req) {
+        return this.propertiesService.updateStatus(id, dto.status, req.user.id);
+    }
     remove(id, req) {
         return this.propertiesService.remove(id, req.user.id);
     }
@@ -85,6 +88,16 @@ __decorate([
     __metadata("design:paramtypes", [String, property_dto_1.UpdatePropertyDto, Object]),
     __metadata("design:returntype", void 0)
 ], PropertiesController.prototype, "update", null);
+__decorate([
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, common_1.Patch)(':id/status'),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Body)()),
+    __param(2, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, property_dto_1.UpdatePropertyStatusDto, Object]),
+    __metadata("design:returntype", void 0)
+], PropertiesController.prototype, "updateStatus", null);
 __decorate([
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     (0, common_1.Delete)(':id'),

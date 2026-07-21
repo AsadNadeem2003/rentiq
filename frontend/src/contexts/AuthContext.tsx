@@ -7,6 +7,7 @@ interface AuthContextType {
   login: (token: string) => void;
   logout: () => void;
   isAuthenticated: boolean;
+  user: any;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -14,6 +15,7 @@ const AuthContext = createContext<AuthContextType>({
   login: () => {},
   logout: () => {},
   isAuthenticated: false,
+  user: null,
 });
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
@@ -37,10 +39,23 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     setToken(null);
   };
 
+  const getUserFromToken = (token: string | null) => {
+    if (!token) return null;
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      return payload;
+    } catch (e) {
+      return null;
+    }
+  };
+
+  const user = getUserFromToken(token);
+
   return (
     <AuthContext.Provider
       value={{
         token,
+        user,
         login,
         logout,
         isAuthenticated: !!token,

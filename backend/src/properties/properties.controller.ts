@@ -20,6 +20,7 @@ import {
   CreatePropertyDto,
   UpdatePropertyDto,
   QueryPropertyDto,
+  UpdatePropertyStatusDto,
 } from './dto/property.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
@@ -80,6 +81,19 @@ export class PropertiesController {
     @Request() req: { user: { id: string } },
   ) {
     return this.propertiesService.update(id, dto, req.user.id);
+  }
+
+  /**
+   * PATCH /properties/:id/status
+   */
+  @UseGuards(JwtAuthGuard)
+  @Patch(':id/status')
+  updateStatus(
+    @Param('id') id: string,
+    @Body() dto: UpdatePropertyStatusDto,
+    @Request() req: { user: { id: string } },
+  ) {
+    return this.propertiesService.updateStatus(id, dto.status, req.user.id);
   }
 
   /**

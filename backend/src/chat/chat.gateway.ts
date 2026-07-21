@@ -30,6 +30,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
    * Handshake connection handler.
    * Extracts JWT token from the headers or query, verifies it,
    * and attaches the userId to the socket object.
+   * Also joins the user to their personal notification room.
    */
   async handleConnection(client: Socket) {
     try {
@@ -42,6 +43,10 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
       const payload = this.jwtService.verify(token);
       client.data.userId = payload.sub; // Attach user ID
+
+      // Auto-join the user to their personal notification room
+      await client.join(`user:${payload.sub}`);
+      console.log(`User ${payload.sub} connected and joined personal room`);
     } catch (error) {
       console.error('Socket authentication failed:', error);
       client.disconnect();
@@ -96,6 +101,9 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     // 1. Verify membership
     const conversation = await this.prisma.conversation.findUnique({
       where: { id: conversationId },
+      include: {
+        property: { select: { title: true } },
+      },
     });
 
     if (!conversation || (conversation.buyerId !== userId && conversation.ownerId !== userId)) {
@@ -119,6 +127,60 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     // 3. Broadcast to everyone in the room (including sender to update their UI)
     this.server.to(`conversation:${conversationId}`).emit('newMessage', message);
 
+    // 4. Send notification to the OTHER participant's personal room
+    const recipientId = conversation.buyerId === userId ? conversation.ownerId : conversation.buyerId;
+    this.server.to(`user:${recipientId}`).emit('notification', {
+      type: 'new_message',
+      conversationId,
+      senderName: message.sender.name,
+      propertyTitle: conversation.property.title,
+      text: message.text,
+      createdAt: message.createdAt,
+    });
+
     return { status: 'ok', messageId: message.id };
+  }
+
+  /**
+   * Broadcasts an already-saved message to a conversation room
+   * and sends a notification to the other participant.
+   */
+  @SubscribeMessage('broadcastMessage')
+  async handleBroadcastMessage(
+    @MessageBody() message: any,
+    @ConnectedSocket() client: Socket,
+  ) {
+    const userId = client.data.userId;
+
+    if (!message || !message.conversationId) return;
+
+    // 1. Verify membership and get property info
+    const conversation = await this.prisma.conversation.findUnique({
+      where: { id: message.conversationId },
+      include: {
+        property: { select: { title: true } },
+      },
+    });
+
+    if (!conversation || (conversation.buyerId !== userId && conversation.ownerId !== userId)) {
+      throw new WsException('Unauthorized to broadcast in this conversation');
+    }
+
+    // 2. Broadcast to everyone else in the conversation room
+    client.broadcast.to(`conversation:${message.conversationId}`).emit('newMessage', message);
+
+    // 3. Send notification to the OTHER participant's personal room
+    const recipientId = conversation.buyerId === userId ? conversation.ownerId : conversation.buyerId;
+    const senderName = message.sender?.name || 'Someone';
+    this.server.to(`user:${recipientId}`).emit('notification', {
+      type: 'new_message',
+      conversationId: message.conversationId,
+      senderName,
+      propertyTitle: conversation.property.title,
+      text: message.text,
+      createdAt: message.createdAt,
+    });
+
+    return { status: 'ok' };
   }
 }

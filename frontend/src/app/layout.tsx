@@ -2,7 +2,9 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { SocketProvider } from "@/contexts/SocketContext";
 import Navbar from "@/components/Navbar";
+import { Toaster } from "sonner";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -31,8 +33,21 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col">
         <AuthProvider>
-          <Navbar />
-          {children}
+          <SocketProvider>
+            <Navbar />
+            {children}
+            <Toaster
+              position="top-right"
+              richColors
+              closeButton
+              toastOptions={{
+                style: {
+                  borderRadius: "12px",
+                  boxShadow: "0 8px 30px rgba(0,0,0,0.12)",
+                },
+              }}
+            />
+          </SocketProvider>
         </AuthProvider>
       </body>
     </html>

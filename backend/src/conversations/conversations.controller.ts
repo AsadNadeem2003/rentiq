@@ -20,6 +20,12 @@ export class QueryMessagesDto {
   limit?: number;
 }
 
+export class CreateMessageDto {
+  @IsString()
+  @IsNotEmpty()
+  text!: string; // Using text instead of content to match DB
+}
+
 @UseGuards(JwtAuthGuard)
 @Controller('conversations')
 export class ConversationsController {
@@ -38,6 +44,14 @@ export class ConversationsController {
     return this.conversationsService.getUserConversations(req.user.id);
   }
 
+  @Get(':id')
+  findOne(
+    @Param('id') id: string,
+    @Request() req: { user: { id: string } },
+  ) {
+    return this.conversationsService.findOne(id, req.user.id);
+  }
+
   @Get(':id/messages')
   getMessages(
     @Param('id') id: string,
@@ -45,5 +59,14 @@ export class ConversationsController {
     @Request() req: { user: { id: string } },
   ) {
     return this.conversationsService.getMessages(id, req.user.id, query.page, query.limit);
+  }
+
+  @Post(':id/messages')
+  createMessage(
+    @Param('id') id: string,
+    @Body() dto: CreateMessageDto,
+    @Request() req: { user: { id: string } },
+  ) {
+    return this.conversationsService.createMessage(id, req.user.id, dto.text);
   }
 }
