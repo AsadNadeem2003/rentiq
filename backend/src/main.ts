@@ -2,6 +2,9 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
+import * as dns from 'dns';
+
+dns.setDefaultResultOrder('ipv4first');
 
 /**
  * Bootstrap function — starts the NestJS application.
@@ -29,6 +32,17 @@ async function bootstrap() {
       transform: true,
     }),
   );
+
+  app.useGlobalFilters({
+    catch(exception: any, host: any) {
+      const ctx = host.switchToHttp();
+      const response = ctx.getResponse();
+      console.error('CRITICAL BACKEND ERROR:', exception);
+      const status = exception?.getStatus ? exception.getStatus() : 500;
+      const message = exception?.response || exception?.message || 'Internal server error';
+      response.status(status).json(typeof message === 'object' ? message : { statusCode: status, message });
+    }
+  });
 
   // Enable CORS so the Next.js frontend can make API calls
   app.enableCors({

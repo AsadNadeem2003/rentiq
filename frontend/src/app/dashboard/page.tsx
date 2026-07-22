@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Loader2, Plus, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 export default function DashboardPage() {
   const { token, user, isAuthenticated } = useAuth();
@@ -58,9 +59,10 @@ export default function DashboardPage() {
       setProperties(prev => prev.map(p => 
         p.id === propertyId ? { ...p, status: newStatus } : p
       ));
+      toast.success(`Property marked as ${newStatus.toLowerCase()}!`);
     } catch (error) {
       console.error("Failed to update status", error);
-      alert("Failed to update status");
+      toast.error("Failed to update status");
     }
   };
 

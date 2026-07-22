@@ -26,6 +26,7 @@ interface Conversation {
   property: {
     title: string;
     price: number;
+    status?: string;
     ownerId: string;
     owner: { name: string };
   };
@@ -227,26 +228,37 @@ export default function ChatRoomPage({ params }: { params: Promise<{ id: string 
         </div>
 
         {/* Input Area */}
-        <div className="p-4 bg-white border-t shrink-0">
-          <form onSubmit={handleSendMessage} className="flex gap-3 max-w-full relative">
-            <Input
-              type="text"
-              value={newMessage}
-              onChange={(e) => setNewMessage(e.target.value)}
-              placeholder="Type a message..."
-              className="flex-1 h-12 rounded-full pl-6 pr-14 bg-gray-50 border-gray-200 focus-visible:ring-primary shadow-inner"
-              disabled={sending}
-            />
-            <Button 
-              type="submit" 
-              disabled={!newMessage.trim() || sending} 
-              size="icon"
-              className="absolute right-1 top-1 h-10 w-10 rounded-full shadow-md"
-            >
-              <Send size={18} className="ml-1" />
-            </Button>
-          </form>
-        </div>
+        {conversation.property.status && conversation.property.status !== 'AVAILABLE' ? (
+          <div className="p-4 bg-amber-50 border-t border-amber-200 text-center shrink-0">
+            <p className="text-sm font-bold text-amber-800">
+              Messaging is closed for this listing
+            </p>
+            <p className="text-xs text-amber-600 mt-0.5">
+              This property has been marked as {conversation.property.status.toLowerCase()} by the owner.
+            </p>
+          </div>
+        ) : (
+          <div className="p-4 bg-white border-t shrink-0">
+            <form onSubmit={handleSendMessage} className="flex gap-3 max-w-full relative">
+              <Input
+                type="text"
+                value={newMessage}
+                onChange={(e) => setNewMessage(e.target.value)}
+                placeholder="Type a message..."
+                className="flex-1 h-12 rounded-full pl-6 pr-14 bg-gray-50 border-gray-200 focus-visible:ring-primary shadow-inner"
+                disabled={sending}
+              />
+              <Button 
+                type="submit" 
+                disabled={!newMessage.trim() || sending} 
+                size="icon"
+                className="absolute right-1 top-1 h-10 w-10 rounded-full shadow-md"
+              >
+                <Send size={18} className="ml-0.5" />
+              </Button>
+            </form>
+          </div>
+        )}
 
       </Card>
     </div>

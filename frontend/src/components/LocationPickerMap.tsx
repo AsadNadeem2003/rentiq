@@ -39,7 +39,7 @@ function SearchField() {
       retainZoomLevel: false,
       animateZoom: true,
       autoClose: true,
-      searchLabel: "Enter address to search",
+      searchLabel: "Search location, city or area...",
       keepResult: true,
     });
     
@@ -62,7 +62,6 @@ export default function LocationPickerMap({ onLocationSelect }: LocationPickerMa
   const handlePositionChange = async (pos: [number, number]) => {
     setPosition(pos);
 
-    // Reverse geocode to get city and area from coordinates
     try {
       const response = await fetch(
         `https://nominatim.openstreetmap.org/reverse?format=json&lat=${pos[0]}&lon=${pos[1]}&zoom=18&addressdetails=1`,
@@ -71,7 +70,6 @@ export default function LocationPickerMap({ onLocationSelect }: LocationPickerMa
       const data = await response.json();
       const address = data.address || {};
 
-      // Extract city — Nominatim uses different keys depending on the location
       const city =
         address.city ||
         address.town ||
@@ -79,7 +77,6 @@ export default function LocationPickerMap({ onLocationSelect }: LocationPickerMa
         address.state_district ||
         "";
 
-      // Extract area/neighborhood — try multiple granularity levels
       const area =
         address.suburb ||
         address.neighbourhood ||
@@ -92,13 +89,12 @@ export default function LocationPickerMap({ onLocationSelect }: LocationPickerMa
       onLocationSelect(pos[0], pos[1], city, area);
     } catch (error) {
       console.error("Reverse geocoding failed:", error);
-      // Still pass lat/lng even if geocoding fails
       onLocationSelect(pos[0], pos[1]);
     }
   };
 
   return (
-    <div className="h-64 w-full rounded-md overflow-hidden border">
+    <div className="h-72 md:h-80 w-full rounded-2xl overflow-hidden border border-emerald-100/80 shadow-xs relative group bg-emerald-50/20">
       <MapContainer 
         center={[31.5204, 74.3587]} // Lahore default
         zoom={12} 
@@ -111,6 +107,11 @@ export default function LocationPickerMap({ onLocationSelect }: LocationPickerMa
         <SearchField />
         <LocationMarker position={position} setPosition={handlePositionChange} />
       </MapContainer>
+      
+      <div className="absolute bottom-3 left-3 z-[1000] bg-white/95 backdrop-blur-md px-3.5 py-1.5 rounded-xl border border-emerald-200/80 text-emerald-800 text-xs font-bold flex items-center gap-2 shadow-sm pointer-events-none">
+        <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+        Set Location on Map
+      </div>
     </div>
   );
 }

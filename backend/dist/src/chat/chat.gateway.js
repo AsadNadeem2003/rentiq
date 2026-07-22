@@ -65,11 +65,14 @@ let ChatGateway = class ChatGateway {
         const conversation = await this.prisma.conversation.findUnique({
             where: { id: conversationId },
             include: {
-                property: { select: { title: true } },
+                property: { select: { title: true, status: true } },
             },
         });
         if (!conversation || (conversation.buyerId !== userId && conversation.ownerId !== userId)) {
             throw new websockets_1.WsException('Unauthorized to send messages in this conversation');
+        }
+        if (conversation.property.status && conversation.property.status !== 'AVAILABLE') {
+            throw new websockets_1.WsException(`Messaging is disabled because this property is ${conversation.property.status.toLowerCase()}`);
         }
         const message = await this.prisma.message.create({
             data: {

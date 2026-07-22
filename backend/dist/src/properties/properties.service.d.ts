@@ -6,12 +6,13 @@ export declare class PropertiesService {
     findAll(query: QueryPropertyDto): Promise<{
         data: ({
             owner: {
-                id: string;
                 email: string;
                 name: string;
+                id: string;
             };
         } & {
             id: string;
+            createdAt: Date;
             title: string;
             description: string;
             price: number;
@@ -24,7 +25,7 @@ export declare class PropertiesService {
             lng: number;
             mediaUrls: string[];
             ownerId: string;
-            createdAt: Date;
+            status: string;
         })[];
         meta: {
             total: number;
@@ -35,12 +36,13 @@ export declare class PropertiesService {
     }>;
     findOne(id: string): Promise<{
         owner: {
-            id: string;
             email: string;
             name: string;
+            id: string;
         };
     } & {
         id: string;
+        createdAt: Date;
         title: string;
         description: string;
         price: number;
@@ -53,16 +55,17 @@ export declare class PropertiesService {
         lng: number;
         mediaUrls: string[];
         ownerId: string;
-        createdAt: Date;
+        status: string;
     }>;
     create(dto: CreatePropertyDto, ownerId: string, mediaUrls?: string[]): Promise<{
         owner: {
-            id: string;
             email: string;
             name: string;
+            id: string;
         };
     } & {
         id: string;
+        createdAt: Date;
         title: string;
         description: string;
         price: number;
@@ -75,16 +78,17 @@ export declare class PropertiesService {
         lng: number;
         mediaUrls: string[];
         ownerId: string;
-        createdAt: Date;
+        status: string;
     }>;
     update(id: string, dto: UpdatePropertyDto, userId: string): Promise<{
         owner: {
-            id: string;
             email: string;
             name: string;
+            id: string;
         };
     } & {
         id: string;
+        createdAt: Date;
         title: string;
         description: string;
         price: number;
@@ -97,10 +101,17 @@ export declare class PropertiesService {
         lng: number;
         mediaUrls: string[];
         ownerId: string;
-        createdAt: Date;
+        status: string;
     }>;
     updateStatus(id: string, status: string, userId: string): Promise<{
+        owner: {
+            email: string;
+            name: string;
+            id: string;
+        };
+    } & {
         id: string;
+        createdAt: Date;
         title: string;
         description: string;
         price: number;
@@ -113,7 +124,7 @@ export declare class PropertiesService {
         lng: number;
         mediaUrls: string[];
         ownerId: string;
-        createdAt: Date;
+        status: string;
     }>;
     remove(id: string, userId: string): Promise<{
         message: string;

@@ -8,12 +8,13 @@ export declare class PropertiesController {
     findAll(query: QueryPropertyDto): Promise<{
         data: ({
             owner: {
-                id: string;
                 email: string;
                 name: string;
+                id: string;
             };
         } & {
             id: string;
+            createdAt: Date;
             title: string;
             description: string;
             price: number;
@@ -26,7 +27,7 @@ export declare class PropertiesController {
             lng: number;
             mediaUrls: string[];
             ownerId: string;
-            createdAt: Date;
+            status: string;
         })[];
         meta: {
             total: number;
@@ -37,12 +38,13 @@ export declare class PropertiesController {
     }>;
     findOne(id: string): Promise<{
         owner: {
-            id: string;
             email: string;
             name: string;
+            id: string;
         };
     } & {
         id: string;
+        createdAt: Date;
         title: string;
         description: string;
         price: number;
@@ -55,7 +57,7 @@ export declare class PropertiesController {
         lng: number;
         mediaUrls: string[];
         ownerId: string;
-        createdAt: Date;
+        status: string;
     }>;
     create(dto: CreatePropertyDto, req: {
         user: {
@@ -63,12 +65,13 @@ export declare class PropertiesController {
         };
     }, files: Express.Multer.File[]): Promise<{
         owner: {
-            id: string;
             email: string;
             name: string;
+            id: string;
         };
     } & {
         id: string;
+        createdAt: Date;
         title: string;
         description: string;
         price: number;
@@ -81,7 +84,7 @@ export declare class PropertiesController {
         lng: number;
         mediaUrls: string[];
         ownerId: string;
-        createdAt: Date;
+        status: string;
     }>;
     update(id: string, dto: UpdatePropertyDto, req: {
         user: {
@@ -89,12 +92,13 @@ export declare class PropertiesController {
         };
     }): Promise<{
         owner: {
-            id: string;
             email: string;
             name: string;
+            id: string;
         };
     } & {
         id: string;
+        createdAt: Date;
         title: string;
         description: string;
         price: number;
@@ -107,14 +111,21 @@ export declare class PropertiesController {
         lng: number;
         mediaUrls: string[];
         ownerId: string;
-        createdAt: Date;
+        status: string;
     }>;
     updateStatus(id: string, dto: UpdatePropertyStatusDto, req: {
         user: {
             id: string;
         };
     }): Promise<{
+        owner: {
+            email: string;
+            name: string;
+            id: string;
+        };
+    } & {
         id: string;
+        createdAt: Date;
         title: string;
         description: string;
         price: number;
@@ -127,7 +138,7 @@ export declare class PropertiesController {
         lng: number;
         mediaUrls: string[];
         ownerId: string;
-        createdAt: Date;
+        status: string;
     }>;
     remove(id: string, req: {
         user: {

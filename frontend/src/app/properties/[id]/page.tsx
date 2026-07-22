@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { toast } from "sonner";
 
 interface Property {
   id: string;
@@ -75,6 +76,22 @@ export default function PropertyDetailPage({ params }: { params: Promise<{ id: s
       alert("Could not start conversation.");
     } finally {
       setMessaging(false);
+    }
+  };
+
+  const handleStatusChange = async (newStatus: string) => {
+    if (!property) return;
+    try {
+      await axios.patch(
+        `${process.env.NEXT_PUBLIC_API_URL}/properties/${property.id}/status`,
+        { status: newStatus },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setProperty((prev) => (prev ? { ...prev, status: newStatus } : null));
+      toast.success(`Property marked as ${newStatus.toLowerCase()}!`);
+    } catch (error) {
+      console.error("Failed to update status", error);
+      toast.error("Failed to update property status");
     }
   };
 
@@ -171,7 +188,30 @@ export default function PropertyDetailPage({ params }: { params: Promise<{ id: s
               </div>
             </div>
             
-            {!isOwner && property.status === 'AVAILABLE' && (
+            {isOwner ? (
+              <div className="w-full md:w-auto flex flex-col sm:flex-row items-center gap-3">
+                <span className="text-sm font-semibold text-gray-500">Owner Status:</span>
+                {property.status === 'AVAILABLE' ? (
+                  <Button 
+                    size="lg" 
+                    variant="outline" 
+                    className="w-full sm:w-auto font-bold text-base h-12 px-6 border-2 border-primary text-primary hover:bg-primary hover:text-white transition-all shadow-sm"
+                    onClick={() => handleStatusChange(property.type === 'RENT' ? 'RENTED' : 'SOLD')}
+                  >
+                    Mark as {property.type === 'RENT' ? 'Rented Out' : 'Sold Out'}
+                  </Button>
+                ) : (
+                  <Button 
+                    size="lg" 
+                    variant="secondary" 
+                    className="w-full sm:w-auto font-bold text-base h-12 px-6 shadow-sm"
+                    onClick={() => handleStatusChange('AVAILABLE')}
+                  >
+                    Mark as Available
+                  </Button>
+                )}
+              </div>
+            ) : property.status === 'AVAILABLE' ? (
               <Button 
                 size="lg"
                 onClick={handleMessageOwner}
@@ -181,8 +221,7 @@ export default function PropertyDetailPage({ params }: { params: Promise<{ id: s
                 {messaging ? <Loader2 className="animate-spin mr-2 h-5 w-5" /> : <MessageCircle className="mr-2 h-5 w-5" />}
                 {messaging ? "Starting chat..." : "Message Owner"}
               </Button>
-            )}
-            {!isOwner && property.status !== 'AVAILABLE' && (
+            ) : (
               <div className="w-full md:w-auto text-center md:text-right">
                 <p className="text-red-600 font-bold text-lg mb-1">This property is no longer available.</p>
                 <p className="text-sm text-gray-500">It has been marked as {property.status.toLowerCase()} by the owner.</p>

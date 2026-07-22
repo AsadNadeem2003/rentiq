@@ -16,7 +16,16 @@ const pg_1 = require("pg");
 const adapter_pg_1 = require("@prisma/adapter-pg");
 let PrismaService = class PrismaService extends client_1.PrismaClient {
     constructor() {
-        const pool = new pg_1.Pool({ connectionString: process.env.DATABASE_URL });
+        const pool = new pg_1.Pool({
+            connectionString: process.env.DATABASE_URL,
+            ssl: { rejectUnauthorized: false },
+            max: 10,
+            idleTimeoutMillis: 30000,
+            connectionTimeoutMillis: 10000,
+        });
+        pool.on('error', (err) => {
+            console.error('PG Pool Background Error:', err.message);
+        });
         const adapter = new adapter_pg_1.PrismaPg(pool);
         super({ adapter });
     }

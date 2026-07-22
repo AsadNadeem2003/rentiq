@@ -26,7 +26,7 @@ let PropertiesService = class PropertiesService {
             where.ownerId = query.ownerId;
         }
         if (query.city) {
-            where.city = { equals: query.city, mode: 'insensitive' };
+            where.city = { contains: query.city, mode: 'insensitive' };
         }
         if (query.type) {
             where.type = query.type;

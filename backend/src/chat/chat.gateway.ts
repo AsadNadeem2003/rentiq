@@ -98,16 +98,20 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   ) {
     const userId = client.data.userId;
 
-    // 1. Verify membership
+    // 1. Verify membership and property availability
     const conversation = await this.prisma.conversation.findUnique({
       where: { id: conversationId },
       include: {
-        property: { select: { title: true } },
+        property: { select: { title: true, status: true } },
       },
     });
 
     if (!conversation || (conversation.buyerId !== userId && conversation.ownerId !== userId)) {
       throw new WsException('Unauthorized to send messages in this conversation');
+    }
+
+    if (conversation.property.status && conversation.property.status !== 'AVAILABLE') {
+      throw new WsException(`Messaging is disabled because this property is ${conversation.property.status.toLowerCase()}`);
     }
 
     // 2. Write to DB FIRST (No history loss guarantee)

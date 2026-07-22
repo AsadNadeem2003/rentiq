@@ -16,36 +16,41 @@ export declare class ConversationsController {
         user: {
             id: string;
         };
-    }): Promise<{
+    }): Promise<({
         property: {
-            city: string;
             title: string;
+            status: string;
+            city: string;
             mediaUrls: string[];
-        };
-        owner: {
-            id: string;
-            name: string;
         };
         buyer: {
             id: string;
             name: string;
         };
+        owner: {
+            id: string;
+            name: string;
+        };
     } & {
         id: string;
-        createdAt: Date;
-        ownerId: string;
         propertyId: string;
         buyerId: string;
-    }>;
-    findAll(req: {
-        user: {
-            id: string;
-        };
-    }): Promise<({
+        ownerId: string;
+        createdAt: Date;
+    }) | ({
         property: {
-            city: string;
             title: string;
+            status: string;
+            city: string;
             mediaUrls: string[];
+        };
+        buyer: {
+            id: string;
+            name: string;
+        };
+        owner: {
+            id: string;
+            name: string;
         };
         messages: {
             id: string;
@@ -54,73 +59,37 @@ export declare class ConversationsController {
             senderId: string;
             text: string;
         }[];
-        owner: {
-            id: string;
-            name: string;
-        };
-        buyer: {
-            id: string;
-            name: string;
-        };
     } & {
         id: string;
-        createdAt: Date;
-        ownerId: string;
         propertyId: string;
         buyerId: string;
-    })[]>;
-    findOne(id: string, req: {
-        user: {
-            id: string;
-        };
-    }): Promise<{
+        ownerId: string;
+        createdAt: Date;
+    })[] | ({
         property: {
             ownerId: string;
-            price: number;
-            title: string;
             owner: {
                 name: string;
             };
-        };
-        owner: {
-            id: string;
-            name: string;
+            title: string;
+            price: number;
+            status: string;
         };
         buyer: {
             id: string;
             name: string;
         };
+        owner: {
+            id: string;
+            name: string;
+        };
     } & {
         id: string;
-        createdAt: Date;
-        ownerId: string;
         propertyId: string;
         buyerId: string;
-    }>;
-    getMessages(id: string, query: QueryMessagesDto, req: {
-        user: {
-            id: string;
-        };
-    }): Promise<{
-        data: {
-            id: string;
-            createdAt: Date;
-            conversationId: string;
-            senderId: string;
-            text: string;
-        }[];
-        meta: {
-            total: number;
-            page: number;
-            limit: number;
-            totalPages: number;
-        };
-    }>;
-    createMessage(id: string, dto: CreateMessageDto, req: {
-        user: {
-            id: string;
-        };
-    }): Promise<{
+        ownerId: string;
+        createdAt: Date;
+    }) | ({
         sender: {
             id: string;
             name: string;
@@ -131,5 +100,39 @@ export declare class ConversationsController {
         conversationId: string;
         senderId: string;
         text: string;
-    }>;
+    }) | {
+        data: {
+            id: string;
+            createdAt: Date;
+            conversationId: string;
+            senderId: string;
+            text: string;
+        }[];
+        meta: {
+            total: number;
+            page: any;
+            limit: any;
+            totalPages: number;
+        };
+    } | null>;
+    findAll(req: {
+        user: {
+            id: string;
+        };
+    }): any;
+    findOne(id: string, req: {
+        user: {
+            id: string;
+        };
+    }): any;
+    getMessages(id: string, query: QueryMessagesDto, req: {
+        user: {
+            id: string;
+        };
+    }): any;
+    createMessage(id: string, dto: CreateMessageDto, req: {
+        user: {
+            id: string;
+        };
+    }): any;
 }
