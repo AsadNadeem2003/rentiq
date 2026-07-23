@@ -9,30 +9,26 @@ export declare class ConversationsService {
             city: string;
             mediaUrls: string[];
         };
-        buyer: {
+        owner: {
             id: string;
             name: string;
         };
-        owner: {
+        buyer: {
             id: string;
             name: string;
         };
     } & {
         id: string;
-        propertyId: string;
-        buyerId: string;
         ownerId: string;
         createdAt: Date;
+        propertyId: string;
+        buyerId: string;
     }) | ({
         property: {
             title: string;
             status: string;
             city: string;
             mediaUrls: string[];
-        };
-        buyer: {
-            id: string;
-            name: string;
         };
         owner: {
             id: string;
@@ -45,36 +41,40 @@ export declare class ConversationsService {
             senderId: string;
             text: string;
         }[];
+        buyer: {
+            id: string;
+            name: string;
+        };
     } & {
         id: string;
-        propertyId: string;
-        buyerId: string;
         ownerId: string;
         createdAt: Date;
+        propertyId: string;
+        buyerId: string;
     })[] | ({
         property: {
+            title: string;
+            price: number;
+            status: string;
             ownerId: string;
             owner: {
                 name: string;
             };
-            title: string;
-            price: number;
-            status: string;
-        };
-        buyer: {
-            id: string;
-            name: string;
         };
         owner: {
             id: string;
             name: string;
         };
+        buyer: {
+            id: string;
+            name: string;
+        };
     } & {
         id: string;
-        propertyId: string;
-        buyerId: string;
         ownerId: string;
         createdAt: Date;
+        propertyId: string;
+        buyerId: string;
     }) | ({
         sender: {
             id: string;
