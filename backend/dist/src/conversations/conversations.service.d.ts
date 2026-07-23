@@ -2,37 +2,34 @@ import { PrismaService } from '../prisma/prisma.service';
 export declare class ConversationsService {
     private prisma;
     constructor(prisma: PrismaService);
-    createOrGetConversation(propertyId: string, buyerId: string): Promise<({
+    createOrGetConversation(propertyId: string, buyerId: string): Promise<{
         property: {
             title: string;
-            status: string;
             city: string;
             mediaUrls: string[];
+            status: string;
         };
         owner: {
-            id: string;
             name: string;
+            id: string;
         };
         buyer: {
-            id: string;
             name: string;
+            id: string;
         };
     } & {
         id: string;
-        ownerId: string;
         createdAt: Date;
+        ownerId: string;
         propertyId: string;
         buyerId: string;
-    }) | ({
+    }>;
+    getUserConversations(userId: string): Promise<({
         property: {
             title: string;
-            status: string;
             city: string;
             mediaUrls: string[];
-        };
-        owner: {
-            id: string;
-            name: string;
+            status: string;
         };
         messages: {
             id: string;
@@ -41,52 +38,47 @@ export declare class ConversationsService {
             senderId: string;
             text: string;
         }[];
-        buyer: {
-            id: string;
+        owner: {
             name: string;
+            id: string;
+        };
+        buyer: {
+            name: string;
+            id: string;
         };
     } & {
         id: string;
-        ownerId: string;
         createdAt: Date;
+        ownerId: string;
         propertyId: string;
         buyerId: string;
-    })[] | ({
+    })[]>;
+    findOne(conversationId: string, userId: string): Promise<{
         property: {
             title: string;
             price: number;
-            status: string;
             ownerId: string;
+            status: string;
             owner: {
                 name: string;
             };
         };
         owner: {
-            id: string;
             name: string;
+            id: string;
         };
         buyer: {
-            id: string;
             name: string;
+            id: string;
         };
     } & {
         id: string;
-        ownerId: string;
         createdAt: Date;
+        ownerId: string;
         propertyId: string;
         buyerId: string;
-    }) | ({
-        sender: {
-            id: string;
-            name: string;
-        };
-    } & {
-        id: string;
-        createdAt: Date;
-        conversationId: string;
-        senderId: string;
-        text: string;
-    }) | {
+    }>;
+    getMessages(conversationId: string, userId: string, page?: number, limit?: number): Promise<{
         data: {
             id: string;
             createdAt: Date;
@@ -96,9 +88,21 @@ export declare class ConversationsService {
         }[];
         meta: {
             total: number;
-            page: any;
-            limit: any;
+            page: number;
+            limit: number;
             totalPages: number;
         };
-    } | null>;
+    }>;
+    createMessage(conversationId: string, userId: string, text: string): Promise<{
+        sender: {
+            name: string;
+            id: string;
+        };
+    } & {
+        id: string;
+        createdAt: Date;
+        conversationId: string;
+        senderId: string;
+        text: string;
+    }>;
 }

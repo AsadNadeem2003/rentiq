@@ -21,6 +21,8 @@ export class ConversationsService {
 
     if (property.ownerId === buyerId) {
       throw new ForbiddenException('You cannot message yourself about your own property');
+    }
+
     if (property.status && property.status !== 'AVAILABLE') {
       throw new ForbiddenException(`Messaging is disabled because this property is ${property.status.toLowerCase()}`);
     }
