@@ -1,4 +1,13 @@
-import { Controller, Post, Get, Body, Param, Query, Request, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Get,
+  Body,
+  Param,
+  Query,
+  Request,
+  UseGuards,
+} from '@nestjs/common';
 import { ConversationsService } from './conversations.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { IsString, IsNotEmpty, IsOptional } from 'class-validator';
@@ -36,7 +45,10 @@ export class ConversationsController {
     @Body() dto: CreateConversationDto,
     @Request() req: { user: { id: string } },
   ) {
-    return this.conversationsService.createOrGetConversation(dto.propertyId, req.user.id);
+    return this.conversationsService.createOrGetConversation(
+      dto.propertyId,
+      req.user.id,
+    );
   }
 
   @Get()
@@ -45,10 +57,7 @@ export class ConversationsController {
   }
 
   @Get(':id')
-  findOne(
-    @Param('id') id: string,
-    @Request() req: { user: { id: string } },
-  ) {
+  findOne(@Param('id') id: string, @Request() req: { user: { id: string } }) {
     return this.conversationsService.findOne(id, req.user.id);
   }
 
@@ -58,7 +67,12 @@ export class ConversationsController {
     @Query() query: QueryMessagesDto,
     @Request() req: { user: { id: string } },
   ) {
-    return this.conversationsService.getMessages(id, req.user.id, query.page, query.limit);
+    return this.conversationsService.getMessages(
+      id,
+      req.user.id,
+      query.page,
+      query.limit,
+    );
   }
 
   @Post(':id/messages')

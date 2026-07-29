@@ -20,7 +20,9 @@ export class MediaValidationPipe implements PipeTransform {
           throw new BadRequestException('Images must be JPEG or PNG');
         }
         if (file.size > 4 * 1024 * 1024) {
-          throw new BadRequestException(`Image ${file.originalname} size must be less than 4MB`);
+          throw new BadRequestException(
+            `Image ${file.originalname} size must be less than 4MB`,
+          );
         }
       } else if (file.mimetype.startsWith('video/')) {
         videoCount++;
@@ -31,10 +33,14 @@ export class MediaValidationPipe implements PipeTransform {
           throw new BadRequestException('Video must be MP4');
         }
         if (file.size > 7 * 1024 * 1024) {
-          throw new BadRequestException(`Video ${file.originalname} size must be less than 7MB`);
+          throw new BadRequestException(
+            `Video ${file.originalname} size must be less than 7MB`,
+          );
         }
       } else {
-        throw new BadRequestException(`Unsupported file type: ${file.mimetype}`);
+        throw new BadRequestException(
+          `Unsupported file type: ${file.mimetype}`,
+        );
       }
     }
 

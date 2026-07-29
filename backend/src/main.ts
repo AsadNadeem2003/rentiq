@@ -39,9 +39,16 @@ async function bootstrap() {
       const response = ctx.getResponse();
       console.error('CRITICAL BACKEND ERROR:', exception);
       const status = exception?.getStatus ? exception.getStatus() : 500;
-      const message = exception?.response || exception?.message || 'Internal server error';
-      response.status(status).json(typeof message === 'object' ? message : { statusCode: status, message });
-    }
+      const message =
+        exception?.response || exception?.message || 'Internal server error';
+      response
+        .status(status)
+        .json(
+          typeof message === 'object'
+            ? message
+            : { statusCode: status, message },
+        );
+    },
   });
 
   // Enable CORS so the Next.js frontend can make API calls
@@ -56,7 +63,9 @@ async function bootstrap() {
   // Set up Swagger API Documentation
   const config = new DocumentBuilder()
     .setTitle('Rentiq (KirayaPad) API')
-    .setDescription('The Rentiq API documentation for properties, users, and chat.')
+    .setDescription(
+      'The Rentiq API documentation for properties, users, and chat.',
+    )
     .setVersion('1.0')
     .addBearerAuth()
     .build();

@@ -58,7 +58,9 @@ export class PropertiesController {
     // 1. Upload all valid files to Supabase and collect their URLs
     const mediaUrls: string[] = [];
     if (files && files.length > 0) {
-      const uploadPromises = files.map((file) => this.supabaseService.uploadFile(file));
+      const uploadPromises = files.map((file) =>
+        this.supabaseService.uploadFile(file),
+      );
       const urls = await Promise.all(uploadPromises);
       mediaUrls.push(...urls);
     }
@@ -103,10 +105,7 @@ export class PropertiesController {
    */
   @UseGuards(JwtAuthGuard)
   @Delete(':id')
-  remove(
-    @Param('id') id: string,
-    @Request() req: { user: { id: string } },
-  ) {
+  remove(@Param('id') id: string, @Request() req: { user: { id: string } }) {
     return this.propertiesService.remove(id, req.user.id);
   }
 }

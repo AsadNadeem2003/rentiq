@@ -1,4 +1,8 @@
-import { Injectable, ForbiddenException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  ForbiddenException,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
@@ -20,11 +24,15 @@ export class ConversationsService {
     }
 
     if (property.ownerId === buyerId) {
-      throw new ForbiddenException('You cannot message yourself about your own property');
+      throw new ForbiddenException(
+        'You cannot message yourself about your own property',
+      );
     }
 
     if (property.status && property.status !== 'AVAILABLE') {
-      throw new ForbiddenException(`Messaging is disabled because this property is ${property.status.toLowerCase()}`);
+      throw new ForbiddenException(
+        `Messaging is disabled because this property is ${property.status.toLowerCase()}`,
+      );
     }
 
     // Upsert conversation to prevent duplicates based on the @@unique constraint
@@ -43,7 +51,9 @@ export class ConversationsService {
         ownerId: property.ownerId,
       },
       include: {
-        property: { select: { title: true, city: true, mediaUrls: true, status: true } },
+        property: {
+          select: { title: true, city: true, mediaUrls: true, status: true },
+        },
         buyer: { select: { id: true, name: true } },
         owner: { select: { id: true, name: true } },
       },
@@ -61,7 +71,9 @@ export class ConversationsService {
         OR: [{ buyerId: userId }, { ownerId: userId }],
       },
       include: {
-        property: { select: { title: true, city: true, mediaUrls: true, status: true } },
+        property: {
+          select: { title: true, city: true, mediaUrls: true, status: true },
+        },
         buyer: { select: { id: true, name: true } },
         owner: { select: { id: true, name: true } },
         messages: {
@@ -80,7 +92,15 @@ export class ConversationsService {
     const conversation = await this.prisma.conversation.findUnique({
       where: { id: conversationId },
       include: {
-        property: { select: { title: true, price: true, status: true, ownerId: true, owner: { select: { name: true } } } },
+        property: {
+          select: {
+            title: true,
+            price: true,
+            status: true,
+            ownerId: true,
+            owner: { select: { name: true } },
+          },
+        },
         buyer: { select: { id: true, name: true } },
         owner: { select: { id: true, name: true } },
       },
@@ -91,7 +111,9 @@ export class ConversationsService {
     }
 
     if (conversation.buyerId !== userId && conversation.ownerId !== userId) {
-      throw new ForbiddenException('You do not have access to this conversation');
+      throw new ForbiddenException(
+        'You do not have access to this conversation',
+      );
     }
 
     return conversation;
@@ -100,7 +122,12 @@ export class ConversationsService {
   /**
    * Fetch messages for a conversation, ensuring the user is a participant.
    */
-  async getMessages(conversationId: string, userId: string, page: number = 1, limit: number = 50) {
+  async getMessages(
+    conversationId: string,
+    userId: string,
+    page: number = 1,
+    limit: number = 50,
+  ) {
     const conversation = await this.prisma.conversation.findUnique({
       where: { id: conversationId },
     });
@@ -110,7 +137,9 @@ export class ConversationsService {
     }
 
     if (conversation.buyerId !== userId && conversation.ownerId !== userId) {
-      throw new ForbiddenException('You do not have access to this conversation');
+      throw new ForbiddenException(
+        'You do not have access to this conversation',
+      );
     }
 
     const skip = (page - 1) * limit;
@@ -150,11 +179,18 @@ export class ConversationsService {
     }
 
     if (conversation.buyerId !== userId && conversation.ownerId !== userId) {
-      throw new ForbiddenException('You do not have access to this conversation');
+      throw new ForbiddenException(
+        'You do not have access to this conversation',
+      );
     }
 
-    if (conversation.property.status && conversation.property.status !== 'AVAILABLE') {
-      throw new ForbiddenException(`Messaging is disabled because this property is ${conversation.property.status.toLowerCase()}`);
+    if (
+      conversation.property.status &&
+      conversation.property.status !== 'AVAILABLE'
+    ) {
+      throw new ForbiddenException(
+        `Messaging is disabled because this property is ${conversation.property.status.toLowerCase()}`,
+      );
     }
 
     return this.prisma.message.create({

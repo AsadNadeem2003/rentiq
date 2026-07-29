@@ -13,7 +13,9 @@ export class SupabaseService {
     const supabaseKey = this.configService.get<string>('SUPABASE_KEY');
 
     if (!supabaseUrl || !supabaseKey) {
-      console.warn('Supabase credentials missing. File uploads will fail until added to .env');
+      console.warn(
+        'Supabase credentials missing. File uploads will fail until added to .env',
+      );
     }
 
     this.supabase = createClient(

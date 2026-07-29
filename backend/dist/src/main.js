@@ -53,8 +53,12 @@ async function bootstrap() {
             console.error('CRITICAL BACKEND ERROR:', exception);
             const status = exception?.getStatus ? exception.getStatus() : 500;
             const message = exception?.response || exception?.message || 'Internal server error';
-            response.status(status).json(typeof message === 'object' ? message : { statusCode: status, message });
-        }
+            response
+                .status(status)
+                .json(typeof message === 'object'
+                ? message
+                : { statusCode: status, message });
+        },
     });
     app.enableCors({
         origin: 'http://localhost:3000',

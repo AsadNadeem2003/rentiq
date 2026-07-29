@@ -28,7 +28,9 @@ let ChatGateway = class ChatGateway {
     async handleConnection(client) {
         try {
             const authHeader = client.handshake.headers.authorization;
-            const token = authHeader ? authHeader.split(' ')[1] : client.handshake.auth.token;
+            const token = authHeader
+                ? authHeader.split(' ')[1]
+                : client.handshake.auth.token;
             if (!token) {
                 throw new websockets_1.WsException('Unauthorized');
             }
@@ -68,10 +70,12 @@ let ChatGateway = class ChatGateway {
                 property: { select: { title: true, status: true } },
             },
         });
-        if (!conversation || (conversation.buyerId !== userId && conversation.ownerId !== userId)) {
+        if (!conversation ||
+            (conversation.buyerId !== userId && conversation.ownerId !== userId)) {
             throw new websockets_1.WsException('Unauthorized to send messages in this conversation');
         }
-        if (conversation.property.status && conversation.property.status !== 'AVAILABLE') {
+        if (conversation.property.status &&
+            conversation.property.status !== 'AVAILABLE') {
             throw new websockets_1.WsException(`Messaging is disabled because this property is ${conversation.property.status.toLowerCase()}`);
         }
         const message = await this.prisma.message.create({
@@ -86,8 +90,12 @@ let ChatGateway = class ChatGateway {
                 },
             },
         });
-        this.server.to(`conversation:${conversationId}`).emit('newMessage', message);
-        const recipientId = conversation.buyerId === userId ? conversation.ownerId : conversation.buyerId;
+        this.server
+            .to(`conversation:${conversationId}`)
+            .emit('newMessage', message);
+        const recipientId = conversation.buyerId === userId
+            ? conversation.ownerId
+            : conversation.buyerId;
         this.server.to(`user:${recipientId}`).emit('notification', {
             type: 'new_message',
             conversationId,
@@ -108,11 +116,16 @@ let ChatGateway = class ChatGateway {
                 property: { select: { title: true } },
             },
         });
-        if (!conversation || (conversation.buyerId !== userId && conversation.ownerId !== userId)) {
+        if (!conversation ||
+            (conversation.buyerId !== userId && conversation.ownerId !== userId)) {
             throw new websockets_1.WsException('Unauthorized to broadcast in this conversation');
         }
-        client.broadcast.to(`conversation:${message.conversationId}`).emit('newMessage', message);
-        const recipientId = conversation.buyerId === userId ? conversation.ownerId : conversation.buyerId;
+        client.broadcast
+            .to(`conversation:${message.conversationId}`)
+            .emit('newMessage', message);
+        const recipientId = conversation.buyerId === userId
+            ? conversation.ownerId
+            : conversation.buyerId;
         const senderName = message.sender?.name || 'Someone';
         this.server.to(`user:${recipientId}`).emit('notification', {
             type: 'new_message',

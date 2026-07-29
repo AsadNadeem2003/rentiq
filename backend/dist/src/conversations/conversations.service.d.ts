@@ -5,31 +5,35 @@ export declare class ConversationsService {
     createOrGetConversation(propertyId: string, buyerId: string): Promise<{
         property: {
             title: string;
+            status: string;
             city: string;
             mediaUrls: string[];
-            status: string;
         };
         owner: {
-            name: string;
             id: string;
+            name: string;
         };
         buyer: {
-            name: string;
             id: string;
+            name: string;
         };
     } & {
         id: string;
-        createdAt: Date;
         ownerId: string;
+        createdAt: Date;
         propertyId: string;
         buyerId: string;
     }>;
     getUserConversations(userId: string): Promise<({
         property: {
             title: string;
+            status: string;
             city: string;
             mediaUrls: string[];
-            status: string;
+        };
+        owner: {
+            id: string;
+            name: string;
         };
         messages: {
             id: string;
@@ -38,18 +42,14 @@ export declare class ConversationsService {
             senderId: string;
             text: string;
         }[];
-        owner: {
-            name: string;
-            id: string;
-        };
         buyer: {
-            name: string;
             id: string;
+            name: string;
         };
     } & {
         id: string;
-        createdAt: Date;
         ownerId: string;
+        createdAt: Date;
         propertyId: string;
         buyerId: string;
     })[]>;
@@ -57,24 +57,24 @@ export declare class ConversationsService {
         property: {
             title: string;
             price: number;
-            ownerId: string;
             status: string;
+            ownerId: string;
             owner: {
                 name: string;
             };
         };
         owner: {
-            name: string;
             id: string;
+            name: string;
         };
         buyer: {
-            name: string;
             id: string;
+            name: string;
         };
     } & {
         id: string;
-        createdAt: Date;
         ownerId: string;
+        createdAt: Date;
         propertyId: string;
         buyerId: string;
     }>;
@@ -95,8 +95,8 @@ export declare class ConversationsService {
     }>;
     createMessage(conversationId: string, userId: string, text: string): Promise<{
         sender: {
-            name: string;
             id: string;
+            name: string;
         };
     } & {
         id: string;

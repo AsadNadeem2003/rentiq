@@ -111,7 +111,11 @@ export class PropertiesService {
   /**
    * POST /properties — create a new listing.
    */
-  async create(dto: CreatePropertyDto, ownerId: string, mediaUrls: string[] = []) {
+  async create(
+    dto: CreatePropertyDto,
+    ownerId: string,
+    mediaUrls: string[] = [],
+  ) {
     return this.prisma.property.create({
       data: {
         title: dto.title,

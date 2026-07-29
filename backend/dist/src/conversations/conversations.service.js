@@ -45,7 +45,9 @@ let ConversationsService = class ConversationsService {
                 ownerId: property.ownerId,
             },
             include: {
-                property: { select: { title: true, city: true, mediaUrls: true, status: true } },
+                property: {
+                    select: { title: true, city: true, mediaUrls: true, status: true },
+                },
                 buyer: { select: { id: true, name: true } },
                 owner: { select: { id: true, name: true } },
             },
@@ -58,7 +60,9 @@ let ConversationsService = class ConversationsService {
                 OR: [{ buyerId: userId }, { ownerId: userId }],
             },
             include: {
-                property: { select: { title: true, city: true, mediaUrls: true, status: true } },
+                property: {
+                    select: { title: true, city: true, mediaUrls: true, status: true },
+                },
                 buyer: { select: { id: true, name: true } },
                 owner: { select: { id: true, name: true } },
                 messages: {
@@ -73,7 +77,15 @@ let ConversationsService = class ConversationsService {
         const conversation = await this.prisma.conversation.findUnique({
             where: { id: conversationId },
             include: {
-                property: { select: { title: true, price: true, status: true, ownerId: true, owner: { select: { name: true } } } },
+                property: {
+                    select: {
+                        title: true,
+                        price: true,
+                        status: true,
+                        ownerId: true,
+                        owner: { select: { name: true } },
+                    },
+                },
                 buyer: { select: { id: true, name: true } },
                 owner: { select: { id: true, name: true } },
             },
@@ -127,7 +139,8 @@ let ConversationsService = class ConversationsService {
         if (conversation.buyerId !== userId && conversation.ownerId !== userId) {
             throw new common_1.ForbiddenException('You do not have access to this conversation');
         }
-        if (conversation.property.status && conversation.property.status !== 'AVAILABLE') {
+        if (conversation.property.status &&
+            conversation.property.status !== 'AVAILABLE') {
             throw new common_1.ForbiddenException(`Messaging is disabled because this property is ${conversation.property.status.toLowerCase()}`);
         }
         return this.prisma.message.create({

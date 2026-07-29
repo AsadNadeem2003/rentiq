@@ -35,7 +35,9 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   async handleConnection(client: Socket) {
     try {
       const authHeader = client.handshake.headers.authorization;
-      const token = authHeader ? authHeader.split(' ')[1] : (client.handshake.auth.token as string);
+      const token = authHeader
+        ? authHeader.split(' ')[1]
+        : (client.handshake.auth.token as string);
 
       if (!token) {
         throw new WsException('Unauthorized');
@@ -106,12 +108,22 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       },
     });
 
-    if (!conversation || (conversation.buyerId !== userId && conversation.ownerId !== userId)) {
-      throw new WsException('Unauthorized to send messages in this conversation');
+    if (
+      !conversation ||
+      (conversation.buyerId !== userId && conversation.ownerId !== userId)
+    ) {
+      throw new WsException(
+        'Unauthorized to send messages in this conversation',
+      );
     }
 
-    if (conversation.property.status && conversation.property.status !== 'AVAILABLE') {
-      throw new WsException(`Messaging is disabled because this property is ${conversation.property.status.toLowerCase()}`);
+    if (
+      conversation.property.status &&
+      conversation.property.status !== 'AVAILABLE'
+    ) {
+      throw new WsException(
+        `Messaging is disabled because this property is ${conversation.property.status.toLowerCase()}`,
+      );
     }
 
     // 2. Write to DB FIRST (No history loss guarantee)
@@ -129,10 +141,15 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     });
 
     // 3. Broadcast to everyone in the room (including sender to update their UI)
-    this.server.to(`conversation:${conversationId}`).emit('newMessage', message);
+    this.server
+      .to(`conversation:${conversationId}`)
+      .emit('newMessage', message);
 
     // 4. Send notification to the OTHER participant's personal room
-    const recipientId = conversation.buyerId === userId ? conversation.ownerId : conversation.buyerId;
+    const recipientId =
+      conversation.buyerId === userId
+        ? conversation.ownerId
+        : conversation.buyerId;
     this.server.to(`user:${recipientId}`).emit('notification', {
       type: 'new_message',
       conversationId,
@@ -166,15 +183,23 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       },
     });
 
-    if (!conversation || (conversation.buyerId !== userId && conversation.ownerId !== userId)) {
+    if (
+      !conversation ||
+      (conversation.buyerId !== userId && conversation.ownerId !== userId)
+    ) {
       throw new WsException('Unauthorized to broadcast in this conversation');
     }
 
     // 2. Broadcast to everyone else in the conversation room
-    client.broadcast.to(`conversation:${message.conversationId}`).emit('newMessage', message);
+    client.broadcast
+      .to(`conversation:${message.conversationId}`)
+      .emit('newMessage', message);
 
     // 3. Send notification to the OTHER participant's personal room
-    const recipientId = conversation.buyerId === userId ? conversation.ownerId : conversation.buyerId;
+    const recipientId =
+      conversation.buyerId === userId
+        ? conversation.ownerId
+        : conversation.buyerId;
     const senderName = message.sender?.name || 'Someone';
     this.server.to(`user:${recipientId}`).emit('notification', {
       type: 'new_message',
