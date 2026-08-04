@@ -9,6 +9,8 @@ export declare class CreatePropertyDto {
     area?: string;
     lat: number;
     lng: number;
+    isRoommateAllowed?: boolean;
+    roommatesCount?: number;
 }
 export declare class UpdatePropertyDto {
     title?: string;
@@ -22,6 +24,8 @@ export declare class UpdatePropertyDto {
     lat?: number;
     lng?: number;
     mediaUrls?: string[];
+    isRoommateAllowed?: boolean;
+    roommatesCount?: number;
 }
 export declare class QueryPropertyDto {
     city?: string;
@@ -32,6 +36,7 @@ export declare class QueryPropertyDto {
     page?: number;
     limit?: number;
     ownerId?: string;
+    isRoommateAllowed?: boolean;
 }
 export declare class UpdatePropertyStatusDto {
     status: string;

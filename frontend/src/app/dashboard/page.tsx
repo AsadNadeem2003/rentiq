@@ -99,11 +99,13 @@ export default function DashboardPage() {
               properties.map(property => (
                 <div key={property.id} className="flex flex-col sm:flex-row items-center gap-4 p-3 border rounded-lg hover:bg-gray-50 transition-colors">
                   <Link href={`/properties/${property.id}`} className="flex-1 flex items-center gap-4 min-w-0 w-full">
-                    <img 
-                      src={property.mediaUrls?.[0] || "https://placehold.co/100x100?text=No+Image"} 
-                      alt={property.title} 
-                      className="w-20 h-20 object-cover rounded-md flex-shrink-0"
-                    />
+                    <div className="w-28 h-20 bg-gray-100 flex items-center justify-center rounded-md flex-shrink-0 p-1 border">
+                      <img 
+                        src={property.mediaUrls?.[0] || "https://placehold.co/100x100?text=No+Image"} 
+                        alt={property.title} 
+                        className="max-w-full max-h-full object-contain drop-shadow-sm"
+                      />
+                    </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2 mb-1">
                         <h3 className="font-semibold text-lg line-clamp-1">{property.title}</h3>

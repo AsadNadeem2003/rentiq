@@ -58,6 +58,7 @@ interface LocationPickerMapProps {
 
 export default function LocationPickerMap({ onLocationSelect }: LocationPickerMapProps) {
   const [position, setPosition] = useState<[number, number] | null>(null);
+  const [selectedAddress, setSelectedAddress] = useState<string>("");
 
   const handlePositionChange = async (pos: [number, number]) => {
     setPosition(pos);
@@ -69,6 +70,9 @@ export default function LocationPickerMap({ onLocationSelect }: LocationPickerMa
       );
       const data = await response.json();
       const address = data.address || {};
+      if (data.display_name) {
+        setSelectedAddress(data.display_name);
+      }
 
       const city =
         address.city ||
@@ -94,24 +98,33 @@ export default function LocationPickerMap({ onLocationSelect }: LocationPickerMa
   };
 
   return (
-    <div className="h-72 md:h-80 w-full rounded-2xl overflow-hidden border border-emerald-100/80 shadow-xs relative group bg-emerald-50/20">
-      <MapContainer 
-        center={[31.5204, 74.3587]} // Lahore default
-        zoom={12} 
-        className="w-full h-full"
-      >
-        <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        />
-        <SearchField />
-        <LocationMarker position={position} setPosition={handlePositionChange} />
-      </MapContainer>
-      
-      <div className="absolute bottom-3 left-3 z-[1000] bg-white/95 backdrop-blur-md px-3.5 py-1.5 rounded-xl border border-emerald-200/80 text-emerald-800 text-xs font-bold flex items-center gap-2 shadow-sm pointer-events-none">
-        <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
-        Set Location on Map
+    <div className="space-y-3">
+      <div className="h-72 md:h-80 w-full rounded-2xl overflow-hidden border border-emerald-100/80 shadow-xs relative group bg-emerald-50/20">
+        <MapContainer 
+          center={[31.5204, 74.3587]} // Lahore default
+          zoom={12} 
+          className="w-full h-full"
+        >
+          <TileLayer
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          />
+          <SearchField />
+          <LocationMarker position={position} setPosition={handlePositionChange} />
+        </MapContainer>
+        
+        <div className="absolute bottom-3 left-3 z-[1000] bg-white/95 backdrop-blur-md px-3.5 py-1.5 rounded-xl border border-emerald-200/80 text-emerald-800 text-xs font-bold flex items-center gap-2 shadow-sm pointer-events-none">
+          <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+          Set Location on Map
+        </div>
       </div>
+
+      {selectedAddress && (
+        <div className="p-3 bg-emerald-50/90 border border-emerald-200 rounded-xl text-xs text-emerald-900 font-semibold flex items-start gap-2 shadow-xs">
+          <span className="shrink-0 mt-0.5">📍</span>
+          <span className="leading-snug">{selectedAddress}</span>
+        </div>
+      )}
     </div>
   );
 }

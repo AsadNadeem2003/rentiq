@@ -74,6 +74,47 @@ export class AuthService {
     return this.generateToken(user.id, user.email);
   }
 
+  async verifyTenant(userId: string, cnicNumber: string) {
+    const user = await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        cnicNumber,
+        isVerified: true,
+        verificationStatus: 'VERIFIED',
+      },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        isVerified: true,
+        verificationStatus: true,
+        cnicNumber: true,
+      },
+    });
+
+    return user;
+  }
+
+  async getProfile(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        isVerified: true,
+        verificationStatus: true,
+        cnicNumber: true,
+      },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+
+    return user;
+  }
+
   /**
    * Generates a signed JWT token.
    *

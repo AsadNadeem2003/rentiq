@@ -48,8 +48,8 @@ let ConversationsService = class ConversationsService {
                 property: {
                     select: { title: true, city: true, mediaUrls: true, status: true },
                 },
-                buyer: { select: { id: true, name: true } },
-                owner: { select: { id: true, name: true } },
+                buyer: { select: { id: true, name: true, isVerified: true } },
+                owner: { select: { id: true, name: true, isVerified: true } },
             },
         });
         return conversation;
@@ -63,8 +63,8 @@ let ConversationsService = class ConversationsService {
                 property: {
                     select: { title: true, city: true, mediaUrls: true, status: true },
                 },
-                buyer: { select: { id: true, name: true } },
-                owner: { select: { id: true, name: true } },
+                buyer: { select: { id: true, name: true, isVerified: true } },
+                owner: { select: { id: true, name: true, isVerified: true } },
                 messages: {
                     orderBy: { createdAt: 'desc' },
                     take: 1,
@@ -86,8 +86,8 @@ let ConversationsService = class ConversationsService {
                         owner: { select: { name: true } },
                     },
                 },
-                buyer: { select: { id: true, name: true } },
-                owner: { select: { id: true, name: true } },
+                buyer: { select: { id: true, name: true, isVerified: true } },
+                owner: { select: { id: true, name: true, isVerified: true } },
             },
         });
         if (!conversation) {

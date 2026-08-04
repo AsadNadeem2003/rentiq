@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, use } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
 import axios from "axios";
 import dynamic from "next/dynamic";
-import { Loader2, Tag, MapPin, Building2, Image as ImageIcon, CheckCircle2, Users } from "lucide-react";
+import { Loader2, Tag, Building2, Users, ArrowLeft, Save, Image as ImageIcon, Trash2, CheckCircle2, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -31,12 +31,15 @@ const LocationPickerMap = dynamic(
   }
 );
 
-export default function NewPropertyPage() {
+export default function EditPropertyPage({ params }: { params: Promise<{ id: string }> }) {
+  const resolvedParams = use(params);
+  const id = resolvedParams.id;
+
   const { token, isAuthenticated } = useAuth();
   const router = useRouter();
 
-  const [loading, setLoading] = useState(false);
-  const [mediaFiles, setMediaFiles] = useState<File[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   
   const [formData, setFormData] = useState({
     title: "",
@@ -53,27 +56,44 @@ export default function NewPropertyPage() {
     roommatesCount: "2",
   });
 
-  // Load saved form data on mount
+  const [existingMediaUrls, setExistingMediaUrls] = useState<string[]>([]);
+  const [newMediaFiles, setNewMediaFiles] = useState<File[]>([]);
+
   useEffect(() => {
-    const savedData = localStorage.getItem("addPropertyFormData");
-    if (savedData) {
+    const fetchProperty = async () => {
       try {
-        setFormData(JSON.parse(savedData));
-      } catch (e) {
-        console.error("Failed to parse saved form data");
+        const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/properties/${id}`);
+        const p = response.data;
+        setFormData({
+          title: p.title || "",
+          description: p.description || "",
+          price: p.price ? p.price.toString() : "",
+          type: p.type || "RENT",
+          beds: p.beds ? p.beds.toString() : "",
+          baths: p.baths ? p.baths.toString() : "",
+          city: p.city || "",
+          area: p.area || "",
+          lat: p.lat || 0,
+          lng: p.lng || 0,
+          isRoommateAllowed: p.isRoommateAllowed || false,
+          roommatesCount: p.roommatesCount ? p.roommatesCount.toString() : "2",
+        });
+        setExistingMediaUrls(p.mediaUrls || []);
+      } catch (error) {
+        console.error("Failed to fetch property details for editing", error);
+        toast.error("Failed to load property details");
+      } finally {
+        setLoading(false);
       }
-    }
-  }, []);
+    };
+    fetchProperty();
+  }, [id]);
 
-  // Save form data on change
   useEffect(() => {
-    localStorage.setItem("addPropertyFormData", JSON.stringify(formData));
-  }, [formData]);
-
-  if (!isAuthenticated && typeof window !== "undefined") {
-    router.push("/login");
-    return null;
-  }
+    if (!loading && !isAuthenticated) {
+      router.push("/login");
+    }
+  }, [loading, isAuthenticated, router]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -97,24 +117,22 @@ export default function NewPropertyPage() {
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
-      const filesArray = Array.from(e.target.files);
-      if (filesArray.length > 5) {
-        toast.error("You can only select up to 5 media files total");
-        return;
-      }
-      setMediaFiles(filesArray);
+      const selected = Array.from(e.target.files);
+      setNewMediaFiles((prev) => [...prev, ...selected]);
     }
+  };
+
+  const handleRemoveExistingMedia = (index: number) => {
+    setExistingMediaUrls((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleRemoveNewMedia = (index: number) => {
+    setNewMediaFiles((prev) => prev.filter((_, i) => i !== index));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!formData.lat || !formData.lng) {
-      toast.error("Please click on the map to set property location.");
-      return;
-    }
-
-    setLoading(true);
+    setSaving(true);
 
     try {
       const data = new FormData();
@@ -130,32 +148,41 @@ export default function NewPropertyPage() {
       data.append("lng", formData.lng.toString());
       data.append("isRoommateAllowed", formData.isRoommateAllowed.toString());
       data.append("roommatesCount", formData.roommatesCount);
+      data.append("mediaUrls", JSON.stringify(existingMediaUrls));
 
-      mediaFiles.forEach((file) => {
+      newMediaFiles.forEach((file) => {
         data.append("media", file);
       });
 
-      const response = await axios.post(
-        `${process.env.NEXT_PUBLIC_API_URL}/properties`,
+      await axios.patch(
+        `${process.env.NEXT_PUBLIC_API_URL}/properties/${id}`,
         data,
         {
           headers: {
-            "Content-Type": "multipart/form-data",
             Authorization: `Bearer ${token}`,
+            "Content-Type": "multipart/form-data",
           },
         }
       );
 
-      localStorage.removeItem("addPropertyFormData");
-      toast.success("Property listing posted successfully!");
-      router.push(`/properties/${response.data.id}`);
+      toast.success("Property updated successfully!");
+      router.push(`/properties/${id}`);
     } catch (error: any) {
-      console.error("Failed to add property", error);
-      toast.error(error.response?.data?.message || "Failed to add property. Check file limits.");
+      console.error("Failed to update property", error);
+      toast.error(error.response?.data?.message || "Failed to update property.");
     } finally {
-      setLoading(false);
+      setSaving(false);
     }
   };
+
+  if (loading) {
+    return (
+      <div className="max-w-4xl mx-auto p-8 space-y-6">
+        <Skeleton className="h-20 w-full rounded-2xl" />
+        <Skeleton className="h-96 w-full rounded-2xl" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-50/70 py-10 px-4 md:px-8">
@@ -164,15 +191,23 @@ export default function NewPropertyPage() {
         {/* Page Header */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-6 md:p-8 rounded-3xl border border-slate-200/80 shadow-xs">
           <div>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-xs font-bold text-slate-500 mb-2 p-0 h-auto hover:bg-transparent hover:text-slate-800 flex items-center gap-1"
+              onClick={() => router.back()}
+            >
+              <ArrowLeft size={14} /> Back to Property Details
+            </Button>
             <h1 className="text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight">
-              Post a Property Listing
+              Edit Property Listing
             </h1>
             <p className="text-slate-500 font-medium text-sm mt-1">
-              Reach thousands of buyers and tenants across Pakistan on Rentiq.
+              Update details, price, location, photos, or roommate settings for your property.
             </p>
           </div>
           <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200 font-bold px-3 py-1 rounded-full text-xs shrink-0">
-            Zameen Profolio Standards
+            Owner Mode 🛠️
           </Badge>
         </div>
 
@@ -200,7 +235,6 @@ export default function NewPropertyPage() {
                   name="title" 
                   value={formData.title} 
                   onChange={handleChange} 
-                  placeholder="e.g. Executive 2-Bed Furnished Apartment in DHA Phase 5" 
                   className="h-11 rounded-xl border-slate-200 font-medium" 
                 />
               </div>
@@ -214,7 +248,6 @@ export default function NewPropertyPage() {
                   value={formData.description} 
                   onChange={handleChange} 
                   className="min-h-[120px] rounded-xl border-slate-200 font-medium resize-none" 
-                  placeholder="Describe key features, floor plan, amenities, and nearby landmarks..." 
                 />
               </div>
 
@@ -245,7 +278,7 @@ export default function NewPropertyPage() {
             </CardContent>
           </Card>
 
-          {/* Section 2: Price & Area */}
+          {/* Section 2: Price & Value */}
           <Card className="rounded-3xl border-slate-200/80 bg-white shadow-xs">
             <CardHeader className="border-b border-slate-100 pb-5">
               <div className="flex items-center gap-3">
@@ -254,7 +287,7 @@ export default function NewPropertyPage() {
                 </div>
                 <div>
                   <CardTitle className="text-lg font-bold text-slate-900">Price & Value</CardTitle>
-                  <CardDescription className="text-xs">Set your asking price in Pakistani Rupees (PKR)</CardDescription>
+                  <CardDescription className="text-xs">Update your asking price in Pakistani Rupees (PKR)</CardDescription>
                 </div>
               </div>
             </CardHeader>
@@ -273,7 +306,6 @@ export default function NewPropertyPage() {
                     name="price" 
                     value={formData.price} 
                     onChange={handleChange} 
-                    placeholder="e.g. 75000" 
                     className="h-11 pl-16 rounded-xl border-slate-200 font-bold text-base text-slate-900" 
                   />
                 </div>
@@ -351,40 +383,7 @@ export default function NewPropertyPage() {
             </Card>
           )}
 
-          {/* Section 3: Location (Landscape Map) */}
-          <Card className="rounded-3xl border-slate-200/80 bg-white shadow-xs">
-            <CardHeader className="border-b border-slate-100 pb-5">
-              <div className="flex items-center gap-3">
-                <div className="p-2.5 bg-emerald-50 text-emerald-700 rounded-2xl">
-                  <MapPin size={22} />
-                </div>
-                <div>
-                  <CardTitle className="text-lg font-bold text-slate-900">Property Location</CardTitle>
-                  <CardDescription className="text-xs">Select location on the landscape map below to auto-fill address details</CardDescription>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="p-6 md:p-8 space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <Label htmlFor="city" className="text-xs font-bold text-slate-700 uppercase tracking-wider">City</Label>
-                  <Input required id="city" type="text" name="city" value={formData.city} onChange={handleChange} placeholder="e.g. Lahore" className="h-11 rounded-xl border-slate-200 font-medium" />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="area" className="text-xs font-bold text-slate-700 uppercase tracking-wider">Area / Locality</Label>
-                  <Input id="area" type="text" name="area" value={formData.area} onChange={handleChange} placeholder="e.g. DHA Phase 6, Muslim Town" className="h-11 rounded-xl border-slate-200 font-medium" />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label className="text-xs font-bold text-slate-700 uppercase tracking-wider block mb-1">Set Pin on Landscape Map</Label>
-                <LocationPickerMap onLocationSelect={handleLocationSelect} />
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Section 4: Media Upload */}
+          {/* Section 3: Media Upload & Photos */}
           <Card className="rounded-3xl border-slate-200/80 bg-white shadow-xs">
             <CardHeader className="border-b border-slate-100 pb-5">
               <div className="flex items-center gap-3">
@@ -392,40 +391,139 @@ export default function NewPropertyPage() {
                   <ImageIcon size={22} />
                 </div>
                 <div>
-                  <CardTitle className="text-lg font-bold text-slate-900">Property Media</CardTitle>
-                  <CardDescription className="text-xs">Upload up to 4 high quality photos and 1 video walkthrough</CardDescription>
+                  <CardTitle className="text-lg font-bold text-slate-900">Property Photos & Video</CardTitle>
+                  <CardDescription className="text-xs">Manage current photos or upload new images & video walkthrough</CardDescription>
                 </div>
               </div>
             </CardHeader>
-            <CardContent className="p-6 md:p-8">
-              <Input 
-                id="media"
-                type="file" 
-                multiple 
-                accept="image/jpeg, image/png, video/mp4" 
-                onChange={handleFileChange} 
-                className="h-12 cursor-pointer rounded-xl border-slate-200 file:cursor-pointer file:bg-emerald-50 file:text-emerald-700 file:border-0 file:rounded-lg file:px-4 file:py-1.5 file:mr-4 file:text-xs file:font-bold hover:file:bg-emerald-100" 
-              />
-              {mediaFiles.length > 0 && (
-                <p className="text-xs font-bold text-emerald-700 mt-2 flex items-center gap-1">
-                  <CheckCircle2 size={14} /> {mediaFiles.length} file(s) selected
-                </p>
+            <CardContent className="p-6 md:p-8 space-y-6">
+              {/* Existing photos preview grid */}
+              {existingMediaUrls.length > 0 && (
+                <div className="space-y-3">
+                  <Label className="text-xs font-bold text-slate-700 uppercase tracking-wider block">Current Photos ({existingMediaUrls.length})</Label>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                    {existingMediaUrls.map((url, idx) => (
+                      <div key={idx} className="relative group rounded-2xl overflow-hidden border border-slate-200 h-32 bg-slate-100 flex items-center justify-center p-1">
+                        <img src={url} alt={`Photo ${idx + 1}`} className="max-w-full max-h-full object-contain" />
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveExistingMedia(idx)}
+                          className="absolute top-2 right-2 p-1.5 bg-red-600 text-white rounded-xl shadow-md hover:bg-red-700 transition-colors"
+                          title="Remove photo"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               )}
+
+              {/* Newly selected files preview */}
+              {newMediaFiles.length > 0 && (
+                <div className="space-y-3 pt-2 border-t border-slate-100">
+                  <Label className="text-xs font-bold text-emerald-700 uppercase tracking-wider flex items-center gap-1">
+                    <CheckCircle2 size={14} /> Newly Selected Files ({newMediaFiles.length})
+                  </Label>
+                  <div className="space-y-2">
+                    {newMediaFiles.map((file, idx) => (
+                      <div key={idx} className="flex items-center justify-between p-3 bg-emerald-50/60 border border-emerald-100 rounded-xl text-xs font-medium text-emerald-900">
+                        <span className="truncate max-w-xs">{file.name} ({(file.size / 1024 / 1024).toFixed(2)} MB)</span>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveNewMedia(idx)}
+                          className="text-red-600 hover:text-red-800 font-bold ml-2"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Upload input button */}
+              <div className="space-y-2 pt-2">
+                <Label htmlFor="media" className="text-xs font-bold text-slate-700 uppercase tracking-wider block">Add New Photos / Video</Label>
+                <Input 
+                  id="media"
+                  type="file" 
+                  multiple 
+                  accept="image/jpeg, image/png, video/mp4" 
+                  onChange={handleFileChange} 
+                  className="h-12 cursor-pointer rounded-xl border-slate-200 file:cursor-pointer file:bg-emerald-50 file:text-emerald-700 file:border-0 file:rounded-lg file:px-4 file:py-1.5 file:mr-4 file:text-xs file:font-bold hover:file:bg-emerald-100" 
+                />
+              </div>
             </CardContent>
           </Card>
 
-          {/* Submit Action Button */}
-          <div className="flex justify-end pt-4">
-            <Button 
-              type="submit" 
-              disabled={loading} 
-              className="w-full md:w-auto h-13 px-10 text-base font-extrabold bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl shadow-md transition-all"
+          {/* Section 4: Location (Landscape Map) */}
+          <Card className="rounded-3xl border-slate-200/80 bg-white shadow-xs">
+            <CardHeader className="border-b border-slate-100 pb-5">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-emerald-50 text-emerald-700 rounded-2xl">
+                  <Building2 size={22} />
+                </div>
+                <div>
+                  <CardTitle className="text-lg font-bold text-slate-900">City & Area Name</CardTitle>
+                  <CardDescription className="text-xs">Specify exact city and neighborhood so buyers know your location</CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="p-6 md:p-8 space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label htmlFor="city" className="text-xs font-bold text-slate-700 uppercase tracking-wider">City Name</Label>
+                  <Input 
+                    required 
+                    id="city" 
+                    name="city" 
+                    value={formData.city} 
+                    onChange={handleChange} 
+                    placeholder="e.g. Lahore, Karachi, Islamabad" 
+                    className="h-11 rounded-xl border-slate-200 font-medium" 
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="area" className="text-xs font-bold text-slate-700 uppercase tracking-wider">Specific Area / Neighborhood</Label>
+                  <Input 
+                    id="area" 
+                    name="area" 
+                    value={formData.area} 
+                    onChange={handleChange} 
+                    placeholder="e.g. DHA Phase 5, Gulberg III, Muslim Town" 
+                    className="h-11 rounded-xl border-slate-200 font-medium" 
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2 pt-2">
+                <Label className="text-xs font-bold text-slate-700 uppercase tracking-wider">Update Location Pin on Map</Label>
+                <LocationPickerMap onLocationSelect={handleLocationSelect} />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Submit Button */}
+          <div className="flex justify-end gap-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => router.back()}
+              className="h-12 px-6 rounded-2xl font-bold border-slate-300"
             >
-              {loading ? <Loader2 className="animate-spin mr-2 h-5 w-5" /> : null}
-              {loading ? "Publishing Listing..." : "Post Property Listing"}
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              disabled={saving}
+              className="h-12 px-8 rounded-2xl font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-md flex items-center gap-2"
+            >
+              {saving ? <Loader2 className="animate-spin h-5 w-5" /> : <Save className="h-5 w-5" />}
+              {saving ? "Saving Changes & Uploading..." : "Save Property Changes"}
             </Button>
           </div>
-
         </form>
       </div>
     </div>

@@ -40,16 +40,45 @@ let PropertiesController = class PropertiesController {
             const urls = await Promise.all(uploadPromises);
             mediaUrls.push(...urls);
         }
-        return this.propertiesService.create(dto, req.user.id, mediaUrls);
+        const userId = req.user?.id || req.user?.userId;
+        return this.propertiesService.create(dto, userId, mediaUrls);
     }
-    update(id, dto, req) {
-        return this.propertiesService.update(id, dto, req.user.id);
+    async update(id, dto, req, files) {
+        const userId = req.user?.id || req.user?.userId;
+        const newMediaUrls = [];
+        if (files && files.length > 0) {
+            const uploadPromises = files.map((file) => this.supabaseService.uploadFile(file));
+            const urls = await Promise.all(uploadPromises);
+            newMediaUrls.push(...urls);
+        }
+        let existingUrls = [];
+        if (dto.mediaUrls) {
+            if (typeof dto.mediaUrls === 'string') {
+                try {
+                    existingUrls = JSON.parse(dto.mediaUrls);
+                }
+                catch {
+                    existingUrls = [dto.mediaUrls];
+                }
+            }
+            else if (Array.isArray(dto.mediaUrls)) {
+                existingUrls = dto.mediaUrls;
+            }
+        }
+        const finalMediaUrls = [...existingUrls, ...newMediaUrls];
+        const updateData = {
+            ...dto,
+            ...(files?.length || dto.mediaUrls !== undefined ? { mediaUrls: finalMediaUrls } : {}),
+        };
+        return this.propertiesService.update(id, updateData, userId);
     }
     updateStatus(id, dto, req) {
-        return this.propertiesService.updateStatus(id, dto.status, req.user.id);
+        const userId = req.user?.id || req.user?.userId;
+        return this.propertiesService.updateStatus(id, dto.status, userId);
     }
     remove(id, req) {
-        return this.propertiesService.remove(id, req.user.id);
+        const userId = req.user?.id || req.user?.userId;
+        return this.propertiesService.remove(id, userId);
     }
 };
 exports.PropertiesController = PropertiesController;
@@ -81,12 +110,14 @@ __decorate([
 __decorate([
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     (0, common_1.Patch)(':id'),
+    (0, common_1.UseInterceptors)((0, platform_express_1.FilesInterceptor)('media', 5)),
     __param(0, (0, common_1.Param)('id')),
     __param(1, (0, common_1.Body)()),
     __param(2, (0, common_1.Request)()),
+    __param(3, (0, common_1.UploadedFiles)(media_validation_pipe_1.MediaValidationPipe)),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, property_dto_1.UpdatePropertyDto, Object]),
-    __metadata("design:returntype", void 0)
+    __metadata("design:paramtypes", [String, property_dto_1.UpdatePropertyDto, Object, Array]),
+    __metadata("design:returntype", Promise)
 ], PropertiesController.prototype, "update", null);
 __decorate([
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),

@@ -23,6 +23,8 @@ class CreatePropertyDto {
     area;
     lat;
     lng;
+    isRoommateAllowed;
+    roommatesCount;
 }
 exports.CreatePropertyDto = CreatePropertyDto;
 __decorate([
@@ -78,6 +80,19 @@ __decorate([
     (0, class_validator_1.IsNumber)(),
     __metadata("design:type", Number)
 ], CreatePropertyDto.prototype, "lng", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_transformer_1.Transform)(({ value }) => value === 'true' || value === true),
+    (0, class_validator_1.IsBoolean)(),
+    __metadata("design:type", Boolean)
+], CreatePropertyDto.prototype, "isRoommateAllowed", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_transformer_1.Type)(() => Number),
+    (0, class_validator_1.IsInt)(),
+    (0, class_validator_1.Min)(1),
+    __metadata("design:type", Number)
+], CreatePropertyDto.prototype, "roommatesCount", void 0);
 class UpdatePropertyDto {
     title;
     description;
@@ -90,6 +105,8 @@ class UpdatePropertyDto {
     lat;
     lng;
     mediaUrls;
+    isRoommateAllowed;
+    roommatesCount;
 }
 exports.UpdatePropertyDto = UpdatePropertyDto;
 __decorate([
@@ -156,10 +173,35 @@ __decorate([
 ], UpdatePropertyDto.prototype, "lng", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
+    (0, class_transformer_1.Transform)(({ value }) => {
+        if (typeof value === 'string') {
+            try {
+                const parsed = JSON.parse(value);
+                return Array.isArray(parsed) ? parsed : [parsed];
+            }
+            catch {
+                return value ? [value] : [];
+            }
+        }
+        return Array.isArray(value) ? value : [];
+    }),
     (0, class_validator_1.IsArray)(),
     (0, class_validator_1.IsString)({ each: true }),
     __metadata("design:type", Array)
 ], UpdatePropertyDto.prototype, "mediaUrls", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_transformer_1.Transform)(({ value }) => value === 'true' || value === true),
+    (0, class_validator_1.IsBoolean)(),
+    __metadata("design:type", Boolean)
+], UpdatePropertyDto.prototype, "isRoommateAllowed", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_transformer_1.Type)(() => Number),
+    (0, class_validator_1.IsInt)(),
+    (0, class_validator_1.Min)(1),
+    __metadata("design:type", Number)
+], UpdatePropertyDto.prototype, "roommatesCount", void 0);
 class QueryPropertyDto {
     city;
     type;
@@ -169,6 +211,7 @@ class QueryPropertyDto {
     page;
     limit;
     ownerId;
+    isRoommateAllowed;
 }
 exports.QueryPropertyDto = QueryPropertyDto;
 __decorate([
@@ -222,6 +265,12 @@ __decorate([
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], QueryPropertyDto.prototype, "ownerId", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_transformer_1.Transform)(({ value }) => value === 'true' || value === true),
+    (0, class_validator_1.IsBoolean)(),
+    __metadata("design:type", Boolean)
+], QueryPropertyDto.prototype, "isRoommateAllowed", void 0);
 class UpdatePropertyStatusDto {
     status;
 }

@@ -66,7 +66,8 @@ export class PropertiesController {
     }
 
     // 2. Delegate to the service, now passing the real mediaUrls
-    return this.propertiesService.create(dto, req.user.id, mediaUrls);
+    const userId = req.user?.id || (req.user as any)?.userId;
+    return this.propertiesService.create(dto, userId, mediaUrls);
   }
 
   /**
@@ -77,12 +78,47 @@ export class PropertiesController {
    */
   @UseGuards(JwtAuthGuard)
   @Patch(':id')
-  update(
+  @UseInterceptors(FilesInterceptor('media', 5))
+  async update(
     @Param('id') id: string,
     @Body() dto: UpdatePropertyDto,
-    @Request() req: { user: { id: string } },
+    @Request() req: any,
+    @UploadedFiles(MediaValidationPipe) files?: Express.Multer.File[],
   ) {
-    return this.propertiesService.update(id, dto, req.user.id);
+    const userId = req.user?.id || req.user?.userId;
+
+    // 1. Upload newly selected files to Supabase if any
+    const newMediaUrls: string[] = [];
+    if (files && files.length > 0) {
+      const uploadPromises = files.map((file) =>
+        this.supabaseService.uploadFile(file),
+      );
+      const urls = await Promise.all(uploadPromises);
+      newMediaUrls.push(...urls);
+    }
+
+    // 2. Parse retained existing mediaUrls if sent via FormData
+    let existingUrls: string[] = [];
+    if (dto.mediaUrls) {
+      if (typeof dto.mediaUrls === 'string') {
+        try {
+          existingUrls = JSON.parse(dto.mediaUrls);
+        } catch {
+          existingUrls = [dto.mediaUrls];
+        }
+      } else if (Array.isArray(dto.mediaUrls)) {
+        existingUrls = dto.mediaUrls;
+      }
+    }
+
+    const finalMediaUrls = [...existingUrls, ...newMediaUrls];
+
+    const updateData = {
+      ...dto,
+      ...(files?.length || dto.mediaUrls !== undefined ? { mediaUrls: finalMediaUrls } : {}),
+    };
+
+    return this.propertiesService.update(id, updateData, userId);
   }
 
   /**
@@ -93,9 +129,10 @@ export class PropertiesController {
   updateStatus(
     @Param('id') id: string,
     @Body() dto: UpdatePropertyStatusDto,
-    @Request() req: { user: { id: string } },
+    @Request() req: any,
   ) {
-    return this.propertiesService.updateStatus(id, dto.status, req.user.id);
+    const userId = req.user?.id || req.user?.userId;
+    return this.propertiesService.updateStatus(id, dto.status, userId);
   }
 
   /**
@@ -105,7 +142,8 @@ export class PropertiesController {
    */
   @UseGuards(JwtAuthGuard)
   @Delete(':id')
-  remove(@Param('id') id: string, @Request() req: { user: { id: string } }) {
-    return this.propertiesService.remove(id, req.user.id);
+  remove(@Param('id') id: string, @Request() req: any) {
+    const userId = req.user?.id || req.user?.userId;
+    return this.propertiesService.remove(id, userId);
   }
 }

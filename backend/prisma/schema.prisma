@@ -14,6 +14,9 @@ model User {
   email                String         @unique
   password             String
   name                 String
+  isVerified           Boolean        @default(false)
+  cnicNumber           String?
+  verificationStatus   String         @default("UNVERIFIED") // "UNVERIFIED", "PENDING", "VERIFIED"
   properties           Property[]
   conversationsAsBuyer Conversation[] @relation("BuyerConversations")
   conversationsAsOwner Conversation[] @relation("OwnerConversations")
@@ -22,21 +25,23 @@ model User {
 }
 
 model Property {
-  id            String         @id @default(uuid())
-  title         String
-  description   String
-  price         Float
-  type          String         // "RENT" or "SALE"
-  status        String         @default("AVAILABLE") // "AVAILABLE", "SOLD", "RENTED"
-  beds          Int
-  baths         Int
-  city          String
-  area          String?        // Specific neighborhood/locality (e.g., "Muslim Town", "DHA Phase 5")
-  lat           Float
-  lng           Float
-  mediaUrls     String[]
-  ownerId       String
-  owner         User           @relation(fields: [ownerId], references: [id])
+  id                String         @id @default(uuid())
+  title             String
+  description       String
+  price             Float
+  type              String         // "RENT" or "SALE"
+  status            String         @default("AVAILABLE") // "AVAILABLE", "SOLD", "RENTED"
+  beds              Int
+  baths             Int
+  city              String
+  area              String?        // Specific neighborhood/locality (e.g., "Muslim Town", "DHA Phase 5")
+  lat               Float
+  lng               Float
+  isRoommateAllowed Boolean        @default(false)
+  roommatesCount    Int            @default(1)
+  mediaUrls         String[]
+  ownerId           String
+  owner             User           @relation(fields: [ownerId], references: [id])
   conversations Conversation[]
   createdAt     DateTime       @default(now())
 }

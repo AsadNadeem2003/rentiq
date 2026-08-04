@@ -54,8 +54,8 @@ export class ConversationsService {
         property: {
           select: { title: true, city: true, mediaUrls: true, status: true },
         },
-        buyer: { select: { id: true, name: true } },
-        owner: { select: { id: true, name: true } },
+        buyer: { select: { id: true, name: true, isVerified: true } },
+        owner: { select: { id: true, name: true, isVerified: true } },
       },
     });
 
@@ -74,8 +74,8 @@ export class ConversationsService {
         property: {
           select: { title: true, city: true, mediaUrls: true, status: true },
         },
-        buyer: { select: { id: true, name: true } },
-        owner: { select: { id: true, name: true } },
+        buyer: { select: { id: true, name: true, isVerified: true } },
+        owner: { select: { id: true, name: true, isVerified: true } },
         messages: {
           orderBy: { createdAt: 'desc' },
           take: 1, // Include the latest message for the inbox preview
@@ -101,8 +101,8 @@ export class ConversationsService {
             owner: { select: { name: true } },
           },
         },
-        buyer: { select: { id: true, name: true } },
-        owner: { select: { id: true, name: true } },
+        buyer: { select: { id: true, name: true, isVerified: true } },
+        owner: { select: { id: true, name: true, isVerified: true } },
       },
     });
 

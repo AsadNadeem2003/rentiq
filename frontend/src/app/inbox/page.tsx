@@ -6,7 +6,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useSocket } from "@/contexts/SocketContext";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Loader2, MessageCircle, ArrowRight } from "lucide-react";
+import { Loader2, MessageCircle, ArrowRight, BadgeCheck } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
@@ -94,8 +94,13 @@ export default function InboxPage() {
                       
                       <div className="flex-1 min-w-0">
                         <div className="flex justify-between items-baseline mb-1">
-                          <h3 className="font-bold text-lg text-gray-900 truncate">
+                          <h3 className="font-bold text-lg text-gray-900 truncate flex items-center gap-1.5">
                             {otherParticipant?.name || "Unknown User"}
+                            {otherParticipant?.isVerified && (
+                              <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 text-[10px] font-extrabold px-2 py-0.5 rounded-full border border-emerald-200">
+                                <BadgeCheck size={12} className="text-emerald-600" /> Verified 🛡️
+                              </span>
+                            )}
                           </h3>
                           <span className="text-xs font-medium text-gray-400 whitespace-nowrap ml-4">
                             {new Date(conv.createdAt).toLocaleDateString()}

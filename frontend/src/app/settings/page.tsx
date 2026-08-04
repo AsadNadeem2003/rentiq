@@ -7,6 +7,7 @@ import {
   User, 
   Bell, 
   Shield, 
+  ShieldCheck,
   Sliders, 
   Loader2, 
   Check, 
@@ -14,19 +15,27 @@ import {
   Mail, 
   MapPin, 
   Phone,
-  Save
+  Save,
+  BadgeCheck,
+  FileCheck
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
+import axios from "axios";
 
 export default function SettingsPage() {
   const { token, user, isAuthenticated } = useAuth();
   const router = useRouter();
 
-  const [activeTab, setActiveTab] = useState<"profile" | "preferences" | "notifications" | "security">("profile");
+  const [activeTab, setActiveTab] = useState<"profile" | "verification" | "preferences" | "notifications" | "security">("profile");
+
+  // Verification States
+  const [cnic, setCnic] = useState("");
+  const [isVerified, setIsVerified] = useState(false);
+  const [verifying, setVerifying] = useState(false);
 
   // Profile Form States
   const [name, setName] = useState("");
@@ -56,15 +65,55 @@ export default function SettingsPage() {
       return;
     }
 
-    if (user) {
+    const fetchUserProfile = async () => {
+      try {
+        const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/auth/me`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (res.data) {
+          setIsVerified(res.data.isVerified || false);
+          if (res.data.cnicNumber) setCnic(res.data.cnicNumber);
+          if (res.data.name) setName(res.data.name);
+          if (res.data.email) setEmail(res.data.email);
+        }
+      } catch (err) {
+        console.error("Failed to fetch profile", err);
+      }
+    };
+
+    if (token) {
+      fetchUserProfile();
+    } else if (user) {
       if (user.email) {
         setEmail(user.email);
-        // Extract default name from email if not set
         const defaultName = user.email.split("@")[0].replace(/[._]/g, " ");
         setName((prev) => prev || (defaultName.charAt(0).toUpperCase() + defaultName.slice(1)));
       }
     }
-  }, [isAuthenticated, router, user]);
+  }, [isAuthenticated, router, token, user]);
+
+  const handleVerifyTenant = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!cnic || cnic.trim().length < 13) {
+      toast.error("Please enter a valid 13-digit CNIC number (e.g. 35201-xxxxxxx-x)");
+      return;
+    }
+    setVerifying(true);
+    try {
+      await axios.patch(
+        `${process.env.NEXT_PUBLIC_API_URL}/auth/verify`,
+        { cnicNumber: cnic },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setIsVerified(true);
+      toast.success("Identity verified successfully! 'Verified Renter' badge unlocked 🛡️");
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to submit verification. Please try again.");
+    } finally {
+      setVerifying(false);
+    }
+  };
 
   const handleSaveProfile = (e: React.FormEvent) => {
     e.preventDefault();
@@ -145,6 +194,22 @@ export default function SettingsPage() {
               }`}
             >
               <User size={18} /> Profile Details
+            </button>
+
+            <button
+              onClick={() => setActiveTab("verification")}
+              className={`w-full flex items-center justify-between px-4 py-3 text-sm font-semibold rounded-xl transition-all ${
+                activeTab === "verification"
+                  ? "bg-emerald-600 text-white shadow-xs"
+                  : "text-slate-600 hover:bg-white hover:text-slate-900"
+              }`}
+            >
+              <span className="flex items-center gap-3"><ShieldCheck size={18} /> Tenant Verification</span>
+              {isVerified && (
+                <span className="bg-emerald-500/20 text-emerald-100 text-[10px] font-extrabold px-2 py-0.5 rounded-full">
+                  VERIFIED
+                </span>
+              )}
             </button>
             
             <button
@@ -286,6 +351,91 @@ export default function SettingsPage() {
                       </Button>
                     </div>
                   </form>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Tenant Verification Tab */}
+            {activeTab === "verification" && (
+              <Card className="border-0 shadow-sm bg-white rounded-2xl">
+                <CardHeader className="p-6 border-b border-slate-100">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle className="text-xl font-bold text-slate-900 flex items-center gap-2">
+                        <ShieldCheck className="text-emerald-600" size={24} /> Tenant Verification
+                      </CardTitle>
+                      <CardDescription className="text-slate-500 mt-1">
+                        Verify your government CNIC identity to earn the green &quot;Verified Renter&quot; badge across Rentiq.
+                      </CardDescription>
+                    </div>
+                    {isVerified && (
+                      <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 px-3 py-1.5 rounded-full font-bold text-xs flex items-center gap-1.5 shadow-2xs">
+                        <BadgeCheck size={16} className="text-emerald-600" /> Verified Renter 🛡️
+                      </div>
+                    )}
+                  </div>
+                </CardHeader>
+
+                <CardContent className="p-6 space-y-6">
+                  {isVerified ? (
+                    <div className="bg-emerald-50/60 border border-emerald-200 p-6 rounded-2xl space-y-3">
+                      <div className="flex items-center gap-3 text-emerald-800">
+                        <div className="p-2 bg-emerald-600 text-white rounded-xl shadow-xs">
+                          <BadgeCheck size={24} />
+                        </div>
+                        <div>
+                          <h4 className="font-extrabold text-base text-emerald-950">You are a Verified Renter!</h4>
+                          <p className="text-xs text-emerald-700 font-medium">Your identity has been verified via National CNIC ({cnic ? `CNIC: ${cnic}` : "Verified"}).</p>
+                        </div>
+                      </div>
+                      <div className="pt-2 text-xs text-emerald-800 space-y-1.5 font-medium border-t border-emerald-200/60">
+                        <p className="flex items-center gap-2"><Check size={14} className="text-emerald-600" /> Green Verified Badge displayed on all your property listings</p>
+                        <p className="flex items-center gap-2"><Check size={14} className="text-emerald-600" /> Green Verified Badge displayed next to your name in landlord chats</p>
+                        <p className="flex items-center gap-2"><Check size={14} className="text-emerald-600" /> Higher trust score for faster rental approvals</p>
+                      </div>
+                    </div>
+                  ) : (
+                    <form onSubmit={handleVerifyTenant} className="space-y-6">
+                      <div className="bg-slate-50 p-4 rounded-xl border border-slate-200/80 space-y-2">
+                        <h4 className="font-bold text-sm text-slate-900 flex items-center gap-2">
+                          <FileCheck size={18} className="text-emerald-600" /> Why get verified?
+                        </h4>
+                        <p className="text-xs text-slate-600 leading-relaxed">
+                          Verified renters gain massive trust from property owners. When you message a landlord or post a property, a green <strong>Verified Renter 🛡️</strong> badge appears next to your name.
+                        </p>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="cnicNumber" className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+                          National Identity Card (CNIC) Number
+                        </Label>
+                        <div className="relative">
+                          <Shield className="absolute left-3.5 top-3 text-slate-400" size={18} />
+                          <Input
+                            id="cnicNumber"
+                            type="text"
+                            value={cnic}
+                            onChange={(e) => setCnic(e.target.value)}
+                            placeholder="35201-1234567-1"
+                            className="pl-10 h-11 rounded-xl border-slate-200 focus-visible:ring-emerald-500 font-mono text-sm"
+                            required
+                          />
+                        </div>
+                        <p className="text-[11px] text-slate-400">Enter your 13-digit CNIC number. Your data is encrypted and secure.</p>
+                      </div>
+
+                      <div className="pt-2 flex justify-end">
+                        <Button
+                          type="submit"
+                          disabled={verifying}
+                          className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold h-11 px-6 rounded-xl gap-2 shadow-xs"
+                        >
+                          {verifying ? <Loader2 className="animate-spin" size={18} /> : <ShieldCheck size={18} />}
+                          Submit Verification
+                        </Button>
+                      </div>
+                    </form>
+                  )}
                 </CardContent>
               </Card>
             )}

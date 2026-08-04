@@ -11,5 +11,21 @@ export declare class AuthService {
     login(dto: LoginDto): Promise<{
         accessToken: string;
     }>;
+    verifyTenant(userId: string, cnicNumber: string): Promise<{
+        email: string;
+        name: string;
+        cnicNumber: string | null;
+        id: string;
+        isVerified: boolean;
+        verificationStatus: string;
+    }>;
+    getProfile(userId: string): Promise<{
+        email: string;
+        name: string;
+        cnicNumber: string | null;
+        id: string;
+        isVerified: boolean;
+        verificationStatus: string;
+    }>;
     private generateToken;
 }

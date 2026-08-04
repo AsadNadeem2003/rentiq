@@ -8,26 +8,29 @@ export declare class PropertiesController {
     findAll(query: QueryPropertyDto): Promise<{
         data: ({
             owner: {
-                id: string;
                 email: string;
                 name: string;
+                id: string;
+                isVerified: boolean;
             };
         } & {
             id: string;
+            createdAt: Date;
             title: string;
             description: string;
             price: number;
             type: string;
-            status: string;
             beds: number;
             baths: number;
             city: string;
             area: string | null;
             lat: number;
             lng: number;
+            isRoommateAllowed: boolean;
+            roommatesCount: number;
             mediaUrls: string[];
             ownerId: string;
-            createdAt: Date;
+            status: string;
         })[];
         meta: {
             total: number;
@@ -38,26 +41,29 @@ export declare class PropertiesController {
     }>;
     findOne(id: string): Promise<{
         owner: {
-            id: string;
             email: string;
             name: string;
+            id: string;
+            isVerified: boolean;
         };
     } & {
         id: string;
+        createdAt: Date;
         title: string;
         description: string;
         price: number;
         type: string;
-        status: string;
         beds: number;
         baths: number;
         city: string;
         area: string | null;
         lat: number;
         lng: number;
+        isRoommateAllowed: boolean;
+        roommatesCount: number;
         mediaUrls: string[];
         ownerId: string;
-        createdAt: Date;
+        status: string;
     }>;
     create(dto: CreatePropertyDto, req: {
         user: {
@@ -65,86 +71,80 @@ export declare class PropertiesController {
         };
     }, files: Express.Multer.File[]): Promise<{
         owner: {
-            id: string;
             email: string;
             name: string;
+            id: string;
         };
     } & {
         id: string;
+        createdAt: Date;
         title: string;
         description: string;
         price: number;
         type: string;
-        status: string;
         beds: number;
         baths: number;
         city: string;
         area: string | null;
         lat: number;
         lng: number;
+        isRoommateAllowed: boolean;
+        roommatesCount: number;
         mediaUrls: string[];
         ownerId: string;
-        createdAt: Date;
+        status: string;
     }>;
-    update(id: string, dto: UpdatePropertyDto, req: {
-        user: {
-            id: string;
-        };
-    }): Promise<{
+    update(id: string, dto: UpdatePropertyDto, req: any, files?: Express.Multer.File[]): Promise<{
         owner: {
-            id: string;
             email: string;
             name: string;
+            id: string;
         };
     } & {
         id: string;
+        createdAt: Date;
         title: string;
         description: string;
         price: number;
         type: string;
-        status: string;
         beds: number;
         baths: number;
         city: string;
         area: string | null;
         lat: number;
         lng: number;
+        isRoommateAllowed: boolean;
+        roommatesCount: number;
         mediaUrls: string[];
         ownerId: string;
-        createdAt: Date;
+        status: string;
     }>;
-    updateStatus(id: string, dto: UpdatePropertyStatusDto, req: {
-        user: {
-            id: string;
-        };
-    }): Promise<{
+    updateStatus(id: string, dto: UpdatePropertyStatusDto, req: any): Promise<{
         owner: {
-            id: string;
             email: string;
             name: string;
+            id: string;
         };
     } & {
         id: string;
+        createdAt: Date;
         title: string;
         description: string;
         price: number;
         type: string;
-        status: string;
         beds: number;
         baths: number;
         city: string;
         area: string | null;
         lat: number;
         lng: number;
+        isRoommateAllowed: boolean;
+        roommatesCount: number;
         mediaUrls: string[];
         ownerId: string;
-        createdAt: Date;
+        status: string;
     }>;
-    remove(id: string, req: {
-        user: {
-            id: string;
-        };
-    }): Promise<{
+    remove(id: string, req: any): Promise<{
         message: string;
     }>;
 }

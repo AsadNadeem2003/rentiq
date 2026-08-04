@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import axios from "axios";
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { Bed, Bath, MapPin, Plus, Search, Filter, Layers, Map as MapIcon, Grid } from "lucide-react";
+import { Bed, Bath, MapPin, Plus, Search, Filter, Layers, Map as MapIcon, Grid, Users } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -36,6 +36,8 @@ interface Property {
   baths: number;
   lat: number;
   lng: number;
+  isRoommateAllowed?: boolean;
+  roommatesCount?: number;
   mediaUrls: string[];
 }
 
@@ -49,10 +51,11 @@ export default function FeedPage() {
   const [minPrice, setMinPrice] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
   const [beds, setBeds] = useState("");
+  const [roommateOnly, setRoommateOnly] = useState(false);
   
   const [showFilters, setShowFilters] = useState(false);
 
-  const fetchProperties = useCallback(async (overrides?: { type?: string; city?: string; minPrice?: string; maxPrice?: string; beds?: string }) => {
+  const fetchProperties = useCallback(async (overrides?: { type?: string; city?: string; minPrice?: string; maxPrice?: string; beds?: string; roommateOnly?: boolean }) => {
     setLoading(true);
     try {
       const activeCity = overrides?.city !== undefined ? overrides.city : city;
@@ -60,6 +63,7 @@ export default function FeedPage() {
       const activeMinPrice = overrides?.minPrice !== undefined ? overrides.minPrice : minPrice;
       const activeMaxPrice = overrides?.maxPrice !== undefined ? overrides.maxPrice : maxPrice;
       const activeBeds = overrides?.beds !== undefined ? overrides.beds : beds;
+      const activeRoommateOnly = overrides?.roommateOnly !== undefined ? overrides.roommateOnly : roommateOnly;
 
       const params = new URLSearchParams();
       if (activeCity) params.append("city", activeCity);
@@ -67,6 +71,7 @@ export default function FeedPage() {
       if (activeMinPrice) params.append("minPrice", activeMinPrice);
       if (activeMaxPrice) params.append("maxPrice", activeMaxPrice);
       if (activeBeds) params.append("beds", activeBeds);
+      if (activeRoommateOnly) params.append("isRoommateAllowed", "true");
 
       const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/properties?${params.toString()}`);
       setProperties(response.data.data || []);
@@ -75,7 +80,7 @@ export default function FeedPage() {
     } finally {
       setLoading(false);
     }
-  }, [city, type, minPrice, maxPrice, beds]);
+  }, [city, type, minPrice, maxPrice, beds, roommateOnly]);
 
   // Initial load
   useEffect(() => {
@@ -172,13 +177,31 @@ export default function FeedPage() {
 
       {/* Main Content Area: Landscape Property Grid */}
       <div className="max-w-7xl mx-auto px-4 md:px-8 mt-8">
-        <div className="flex justify-between items-center mb-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
           <h2 className="text-xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
             <Grid className="size-5 text-emerald-600" /> Featured Property Listings
           </h2>
-          <span className="text-xs font-bold text-slate-500 bg-white px-3 py-1.5 rounded-full border border-slate-200">
-            {properties.length} Listings Found
-          </span>
+          <div className="flex items-center gap-2 flex-wrap">
+            <Button
+              type="button"
+              variant={roommateOnly ? "default" : "outline"}
+              onClick={() => {
+                const nextState = !roommateOnly;
+                setRoommateOnly(nextState);
+                fetchProperties({ roommateOnly: nextState });
+              }}
+              className={`h-9 text-xs font-bold rounded-full transition-all ${
+                roommateOnly
+                  ? "bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm"
+                  : "bg-white text-emerald-700 border-emerald-200 hover:bg-emerald-50"
+              }`}
+            >
+              <Users size={14} className="mr-1.5" /> 🤝 Roommates Welcome
+            </Button>
+            <span className="text-xs font-bold text-slate-500 bg-white px-3 py-1.5 rounded-full border border-slate-200">
+              {properties.length} Listings Found
+            </span>
+          </div>
         </div>
 
         {loading ? (
@@ -199,19 +222,27 @@ export default function FeedPage() {
             ))}
           </div>
         ) : properties.length === 0 ? (
-          <div className="text-center py-20 bg-white rounded-3xl border border-dashed border-slate-200 flex flex-col items-center">
-            <div className="bg-emerald-50 p-5 rounded-2xl mb-4">
-              <MapPin size={40} className="text-emerald-600" />
+          <div className="bg-white rounded-3xl p-12 text-center border border-slate-200/80 max-w-md mx-auto my-12 space-y-4 shadow-xs">
+            <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto text-slate-400">
+              <Search size={28} />
             </div>
-            <h3 className="text-lg font-bold text-slate-900">No properties found</h3>
-            <p className="text-slate-500 mt-1 max-w-sm text-sm">Try adjusting your filters or be the first to list a property here.</p>
-            {showFilters && (
+            <div>
+              <h3 className="text-lg font-bold text-slate-900">No properties found</h3>
+              <p className="text-slate-500 text-xs mt-1">Try adjusting your filters or search location to find properties.</p>
+            </div>
+            {(city || type !== "ALL" || minPrice || maxPrice || beds || roommateOnly) && (
               <Button 
                 variant="outline" 
-                className="mt-6 rounded-xl border-slate-200"
+                size="sm" 
+                className="rounded-full text-xs font-bold border-slate-300"
                 onClick={() => {
-                  setCity(""); setType("ALL"); setMinPrice(""); setMaxPrice(""); setBeds("");
-                  fetchProperties({ city: "", type: "ALL", minPrice: "", maxPrice: "", beds: "" });
+                  setCity("");
+                  setType("ALL");
+                  setMinPrice("");
+                  setMaxPrice("");
+                  setBeds("");
+                  setRoommateOnly(false);
+                  fetchProperties({ city: "", type: "ALL", minPrice: "", maxPrice: "", beds: "", roommateOnly: false });
                 }}
               >
                 Clear all filters
@@ -224,24 +255,32 @@ export default function FeedPage() {
               <Link href={`/properties/${property.id}`} key={property.id} className="block group">
                 <Card className={`overflow-hidden rounded-2xl border-slate-200/80 bg-white hover:border-emerald-300 hover:shadow-lg transition-all duration-300 h-full flex flex-col ${property.status !== 'AVAILABLE' ? 'opacity-75 grayscale-[20%]' : ''}`}>
                   {/* 16:9 Landscape Aspect Ratio Thumbnail */}
-                  <div className="aspect-[16/10] relative overflow-hidden bg-slate-100">
+                  <div className="h-56 relative overflow-hidden bg-gray-100/80 flex items-center justify-center p-1 border-b">
                     {property.mediaUrls && property.mediaUrls.length > 0 ? (
                       <img 
                         src={property.mediaUrls[0]} 
                         alt={property.title} 
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
+                        className="max-w-full max-h-full object-contain group-hover:scale-[1.03] transition-transform duration-500 drop-shadow-sm rounded-sm" 
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-slate-400 font-medium text-xs">No Image</div>
                     )}
                     
-                    <div className="absolute top-3 left-3 flex flex-col gap-1.5">
+                    <div className="absolute top-3 left-3 flex flex-col gap-1.5 items-start">
                       <Badge 
                         className={`shadow-xs font-bold tracking-wider text-[11px] px-2.5 py-0.5 rounded-lg ${property.type === "RENT" ? "bg-emerald-600 text-white" : "bg-slate-900 text-white"}`}
                       >
                         FOR {property.type}
                       </Badge>
                       
+                      {property.isRoommateAllowed && (
+                        <Badge 
+                          className="shadow-xs font-extrabold tracking-wider text-[10px] bg-emerald-600 text-white px-2 py-0.5 rounded-lg flex items-center gap-1" 
+                        >
+                          <Users size={11} /> Roommates Welcome
+                        </Badge>
+                      )}
+
                       {property.status !== 'AVAILABLE' && (
                         <Badge 
                           className="shadow-xs font-extrabold tracking-wider text-[10px] bg-red-600 text-white px-2 py-0.5 rounded-lg" 
@@ -255,9 +294,18 @@ export default function FeedPage() {
                     <h3 className="text-base font-bold text-slate-900 truncate mb-1 group-hover:text-emerald-700 transition-colors">
                       {property.title}
                     </h3>
-                    <p className="text-emerald-700 font-extrabold text-lg mb-3">
+                    <p className="text-emerald-700 font-extrabold text-lg mb-2">
                       PKR {property.price.toLocaleString()}
                     </p>
+
+                    {property.isRoommateAllowed && (
+                      <div className="text-xs text-emerald-900 font-bold bg-emerald-50/90 px-2.5 py-1.5 rounded-xl border border-emerald-200 mb-3 flex items-center justify-between">
+                        <span>🤝 PKR {Math.round(property.price / (property.roommatesCount || 1)).toLocaleString()} / person</span>
+                        <span className="text-[10px] text-emerald-700 font-medium bg-white px-1.5 py-0.5 rounded-md border border-emerald-200">
+                          Split {property.roommatesCount || 1} ways
+                        </span>
+                      </div>
+                    )}
                     
                     <div className="flex items-center gap-3.5 text-xs text-slate-600 font-medium mt-auto border-t border-slate-100 pt-3">
                       <span className="flex items-center gap-1.5"><Bed size={15} className="text-slate-400" /> {property.beds} Beds</span>

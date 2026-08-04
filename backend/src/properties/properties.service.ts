@@ -41,6 +41,11 @@ export class PropertiesService {
 
     if (query.ownerId) {
       where.ownerId = query.ownerId;
+    } else {
+      where.status = 'AVAILABLE';
+    }
+    if (query.isRoommateAllowed) {
+      where.isRoommateAllowed = true;
     }
     if (query.city) {
       where.city = { contains: query.city, mode: 'insensitive' };
@@ -70,7 +75,7 @@ export class PropertiesService {
         orderBy: { createdAt: 'desc' },
         include: {
           owner: {
-            select: { id: true, name: true, email: true },
+            select: { id: true, name: true, email: true, isVerified: true },
           },
         },
       }),
@@ -96,7 +101,7 @@ export class PropertiesService {
       where: { id },
       include: {
         owner: {
-          select: { id: true, name: true, email: true },
+          select: { id: true, name: true, email: true, isVerified: true },
         },
       },
     });
@@ -127,6 +132,8 @@ export class PropertiesService {
         city: dto.city,
         lat: Number(dto.lat),
         lng: Number(dto.lng),
+        isRoommateAllowed: dto.isRoommateAllowed ? Boolean(dto.isRoommateAllowed) : false,
+        roommatesCount: dto.roommatesCount ? Number(dto.roommatesCount) : 1,
         mediaUrls,
         ownerId,
       },

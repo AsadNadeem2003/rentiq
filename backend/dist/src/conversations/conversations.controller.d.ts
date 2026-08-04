@@ -19,22 +19,24 @@ export declare class ConversationsController {
     }): Promise<{
         property: {
             title: string;
-            status: string;
             city: string;
             mediaUrls: string[];
+            status: string;
         };
         owner: {
-            id: string;
             name: string;
+            id: string;
+            isVerified: boolean;
         };
         buyer: {
-            id: string;
             name: string;
+            id: string;
+            isVerified: boolean;
         };
     } & {
         id: string;
-        ownerId: string;
         createdAt: Date;
+        ownerId: string;
         propertyId: string;
         buyerId: string;
     }>;
@@ -45,13 +47,9 @@ export declare class ConversationsController {
     }): Promise<({
         property: {
             title: string;
-            status: string;
             city: string;
             mediaUrls: string[];
-        };
-        owner: {
-            id: string;
-            name: string;
+            status: string;
         };
         messages: {
             id: string;
@@ -60,14 +58,20 @@ export declare class ConversationsController {
             senderId: string;
             text: string;
         }[];
-        buyer: {
-            id: string;
+        owner: {
             name: string;
+            id: string;
+            isVerified: boolean;
+        };
+        buyer: {
+            name: string;
+            id: string;
+            isVerified: boolean;
         };
     } & {
         id: string;
-        ownerId: string;
         createdAt: Date;
+        ownerId: string;
         propertyId: string;
         buyerId: string;
     })[]>;
@@ -79,24 +83,26 @@ export declare class ConversationsController {
         property: {
             title: string;
             price: number;
-            status: string;
             ownerId: string;
+            status: string;
             owner: {
                 name: string;
             };
         };
         owner: {
-            id: string;
             name: string;
+            id: string;
+            isVerified: boolean;
         };
         buyer: {
-            id: string;
             name: string;
+            id: string;
+            isVerified: boolean;
         };
     } & {
         id: string;
-        ownerId: string;
         createdAt: Date;
+        ownerId: string;
         propertyId: string;
         buyerId: string;
     }>;
@@ -125,8 +131,8 @@ export declare class ConversationsController {
         };
     }): Promise<{
         sender: {
-            id: string;
             name: string;
+            id: string;
         };
     } & {
         id: string;

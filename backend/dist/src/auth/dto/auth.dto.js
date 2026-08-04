@@ -9,7 +9,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.LoginDto = exports.SignupDto = void 0;
+exports.VerifyTenantDto = exports.LoginDto = exports.SignupDto = void 0;
 const class_validator_1 = require("class-validator");
 class SignupDto {
     email;
@@ -45,4 +45,16 @@ __decorate([
     (0, class_validator_1.IsNotEmpty)({ message: 'Password is required' }),
     __metadata("design:type", String)
 ], LoginDto.prototype, "password", void 0);
+class VerifyTenantDto {
+    cnicNumber;
+}
+exports.VerifyTenantDto = VerifyTenantDto;
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsNotEmpty)({ message: 'CNIC number is required' }),
+    (0, class_validator_1.Matches)(/^[1-7][0-9]{4}-?[0-9]{7}-?[0-9]{1}$/, {
+        message: 'Please provide a valid 13-digit Pakistani CNIC number (e.g. 35201-1234567-1)',
+    }),
+    __metadata("design:type", String)
+], VerifyTenantDto.prototype, "cnicNumber", void 0);
 //# sourceMappingURL=auth.dto.js.map

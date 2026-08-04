@@ -7,8 +7,9 @@ import {
   Min,
   IsOptional,
   IsArray,
+  IsBoolean,
 } from 'class-validator';
-import { Type } from 'class-transformer';
+import { Type, Transform } from 'class-transformer';
 
 /**
  * DTO for POST /properties — creating a new property listing.
@@ -60,6 +61,17 @@ export class CreatePropertyDto {
   @Type(() => Number)
   @IsNumber()
   lng!: number;
+
+  @IsOptional()
+  @Transform(({ value }) => value === 'true' || value === true)
+  @IsBoolean()
+  isRoommateAllowed?: boolean;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  roommatesCount?: number;
 }
 
 /**
@@ -120,9 +132,31 @@ export class UpdatePropertyDto {
   lng?: number;
 
   @IsOptional()
+  @Transform(({ value }) => {
+    if (typeof value === 'string') {
+      try {
+        const parsed = JSON.parse(value);
+        return Array.isArray(parsed) ? parsed : [parsed];
+      } catch {
+        return value ? [value] : [];
+      }
+    }
+    return Array.isArray(value) ? value : [];
+  })
   @IsArray()
   @IsString({ each: true })
   mediaUrls?: string[];
+
+  @IsOptional()
+  @Transform(({ value }) => value === 'true' || value === true)
+  @IsBoolean()
+  isRoommateAllowed?: boolean;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  roommatesCount?: number;
 }
 
 /**
@@ -172,6 +206,11 @@ export class QueryPropertyDto {
   @IsOptional()
   @IsString()
   ownerId?: string;
+
+  @IsOptional()
+  @Transform(({ value }) => value === 'true' || value === true)
+  @IsBoolean()
+  isRoommateAllowed?: boolean;
 }
 
 /**

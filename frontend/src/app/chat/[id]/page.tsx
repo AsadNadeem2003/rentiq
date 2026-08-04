@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import axios from "axios";
 import { io, Socket } from "socket.io-client";
 import Link from "next/link";
-import { Send, Loader2, ArrowLeft } from "lucide-react";
+import { Send, Loader2, ArrowLeft, BadgeCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -28,10 +28,10 @@ interface Conversation {
     price: number;
     status?: string;
     ownerId: string;
-    owner: { name: string };
+    owner: { name: string; isVerified?: boolean };
   };
-  buyer: { name: string; id: string };
-  owner: { name: string; id: string };
+  buyer: { name: string; id: string; isVerified?: boolean };
+  owner: { name: string; id: string; isVerified?: boolean };
 }
 
 export default function ChatRoomPage({ params }: { params: Promise<{ id: string }> }) {
@@ -166,7 +166,8 @@ export default function ChatRoomPage({ params }: { params: Promise<{ id: string 
   if (!conversation || !user) return null;
 
   const isOwner = user.sub === conversation.property.ownerId;
-  const otherPersonName = isOwner ? conversation.buyer?.name : conversation.owner?.name;
+  const otherPerson = isOwner ? conversation.buyer : conversation.owner;
+  const otherPersonName = otherPerson?.name;
 
   return (
     <div className="max-w-4xl mx-auto h-[calc(100vh-64px)] p-4 flex flex-col">
@@ -184,7 +185,14 @@ export default function ChatRoomPage({ params }: { params: Promise<{ id: string 
               </AvatarFallback>
             </Avatar>
             <div>
-              <h2 className="font-bold text-lg leading-tight">{otherPersonName}</h2>
+              <div className="flex items-center gap-2">
+                <h2 className="font-bold text-lg leading-tight">{otherPersonName}</h2>
+                {otherPerson?.isVerified && (
+                  <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 text-[10px] font-extrabold px-2 py-0.5 rounded-full border border-emerald-200 shadow-2xs">
+                    <BadgeCheck size={12} className="text-emerald-600" /> Verified Renter 🛡️
+                  </span>
+                )}
+              </div>
               <Link href={`/properties/${conversation.propertyId}`} className="text-sm text-primary hover:underline truncate max-w-[200px] md:max-w-xs block font-medium">
                 {conversation.property.title}
               </Link>
