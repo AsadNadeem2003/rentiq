@@ -17,6 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { formatPakistaniCurrency } from "@/lib/utils";
 
 // Dynamically import Map with SSR disabled since leaflet requires window
 const MapView = dynamic(() => import("@/components/Map"), {
@@ -290,17 +291,17 @@ export default function FeedPage() {
                       )}
                     </div>
                   </div>
-                  <CardContent className="p-4 flex-1 flex flex-col">
-                    <h3 className="text-base font-bold text-slate-900 truncate mb-1 group-hover:text-emerald-700 transition-colors">
+                  <CardContent className="p-4 flex-1 flex flex-col min-w-0">
+                    <h3 className="text-base font-bold text-slate-900 line-clamp-2 break-words mb-1 group-hover:text-emerald-700 transition-colors leading-snug">
                       {property.title}
                     </h3>
-                    <p className="text-emerald-700 font-extrabold text-lg mb-2">
-                      PKR {property.price.toLocaleString()}
+                    <p className="text-emerald-700 font-extrabold text-lg mb-2 break-words">
+                      {formatPakistaniCurrency(property.price)}
                     </p>
 
                     {property.isRoommateAllowed && (
-                      <div className="text-xs text-emerald-900 font-bold bg-emerald-50/90 px-2.5 py-1.5 rounded-xl border border-emerald-200 mb-3 flex items-center justify-between">
-                        <span>🤝 PKR {Math.round(property.price / (property.roommatesCount || 1)).toLocaleString()} / person</span>
+                      <div className="text-xs text-emerald-900 font-bold bg-emerald-50/90 px-2.5 py-1.5 rounded-xl border border-emerald-200 mb-3 flex items-center justify-between gap-1 flex-wrap">
+                        <span>🤝 {formatPakistaniCurrency(Math.round(property.price / (property.roommatesCount || 1)))} / person</span>
                         <span className="text-[10px] text-emerald-700 font-medium bg-white px-1.5 py-0.5 rounded-md border border-emerald-200">
                           Split {property.roommatesCount || 1} ways
                         </span>

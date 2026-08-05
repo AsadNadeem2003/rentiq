@@ -11,7 +11,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { User, Plus, MessageCircle, LayoutDashboard, Settings, LogOut } from "lucide-react";
+import { User, Plus, MessageCircle, Activity, Settings, LogOut } from "lucide-react";
 
 export default function Navbar() {
   const { isAuthenticated, logout } = useAuth();
@@ -32,9 +32,9 @@ export default function Navbar() {
         </Link>
         {isAuthenticated ? (
           <>
-            <Link href="/dashboard" className="text-gray-600 hover:text-emerald-700 transition-colors px-3 py-1.5 rounded-lg hover:bg-emerald-50/60 flex items-center gap-1.5">
-              <LayoutDashboard size={16} />
-              <span className="hidden sm:inline">Dashboard</span>
+            <Link href="/my-activity" className="text-gray-600 hover:text-emerald-700 transition-colors px-3 py-1.5 rounded-lg hover:bg-emerald-50/60 flex items-center gap-1.5">
+              <Activity size={16} />
+              <span className="hidden sm:inline">My Activity</span>
             </Link>
 
             <Link href="/settings" className="text-gray-600 hover:text-emerald-700 transition-colors px-3 py-1.5 rounded-lg hover:bg-emerald-50/60 flex items-center gap-1.5">

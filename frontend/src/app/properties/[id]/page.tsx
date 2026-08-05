@@ -4,13 +4,14 @@ import { useEffect, useState, use } from "react";
 import axios from "axios";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
-import { Bed, Bath, MapPin, Loader2, MessageCircle, BadgeCheck, Users, Navigation, Pencil, Trash2 } from "lucide-react";
+import { Bed, Bath, MapPin, Loader2, MessageCircle, BadgeCheck, Users, Navigation, Pencil, Trash2, ChevronDown, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { toast } from "sonner";
+import { formatPakistaniCurrency } from "@/lib/utils";
 
 interface Property {
   id: string;
@@ -23,29 +24,31 @@ interface Property {
   area?: string;
   beds: number;
   baths: number;
+  mediaUrls?: string[];
   lat?: number;
   lng?: number;
   isRoommateAllowed?: boolean;
   roommatesCount?: number;
-  mediaUrls: string[];
   ownerId: string;
   owner: {
     id: string;
     name: string;
+    email: string;
     isVerified?: boolean;
   };
 }
 
-export default function PropertyDetailPage({ params }: { params: Promise<{ id: string }> }) {
+export default function PropertyDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params);
   const id = resolvedParams.id;
+
+  const { token, user, isAuthenticated } = useAuth();
+  const router = useRouter();
 
   const [property, setProperty] = useState<Property | null>(null);
   const [loading, setLoading] = useState(true);
   const [messaging, setMessaging] = useState(false);
-  
-  const { token, isAuthenticated, user } = useAuth();
-  const router = useRouter();
+  const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
 
   useEffect(() => {
     const fetchProperty = async () => {
@@ -109,7 +112,7 @@ export default function PropertyDetailPage({ params }: { params: Promise<{ id: s
         headers: { Authorization: `Bearer ${token}` }
       });
       toast.success("Property listing deleted successfully!");
-      router.push("/dashboard");
+      router.push("/my-activity");
     } catch (error) {
       console.error("Failed to delete property", error);
       toast.error("Failed to delete property listing.");
@@ -124,9 +127,9 @@ export default function PropertyDetailPage({ params }: { params: Promise<{ id: s
           <CardContent className="p-8 space-y-6">
             <Skeleton className="h-10 w-3/4" />
             <Skeleton className="h-6 w-1/4" />
-            <div className="flex gap-8 border-y py-6">
-              <Skeleton className="h-6 w-32" />
-              <Skeleton className="h-6 w-32" />
+            <div className="flex gap-4">
+              <Skeleton className="h-12 w-32" />
+              <Skeleton className="h-12 w-32" />
             </div>
             <Skeleton className="h-32 w-full" />
           </CardContent>
@@ -145,25 +148,28 @@ export default function PropertyDetailPage({ params }: { params: Promise<{ id: s
   }
 
   const isOwner = isAuthenticated && user?.sub === property.ownerId;
+  const isDescriptionLong = property.description && property.description.length > 300;
 
   return (
     <div className="max-w-7xl mx-auto p-4 md:p-8 mt-4 mb-16">
       
       {/* Title Header (Mobile & Desktop) */}
       <div className="mb-6">
-        <h1 className="text-3xl md:text-4xl font-extrabold text-gray-900 mb-2 tracking-tight">{property.title}</h1>
-        <p className="flex items-center text-muted-foreground font-medium text-lg gap-1.5">
-          <MapPin size={20} /> {property.area ? `${property.area}, ${property.city}` : property.city}
+        <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-gray-900 mb-2 tracking-tight break-words leading-tight">
+          {property.title}
+        </h1>
+        <p className="flex items-center text-muted-foreground font-medium text-base sm:text-lg gap-1.5 break-words">
+          <MapPin size={20} className="shrink-0 text-emerald-600" /> {property.area ? `${property.area}, ${property.city}` : property.city}
         </p>
       </div>
 
       <div className="flex flex-col lg:flex-row gap-8 items-start">
         
         {/* Left Column: Image Gallery & Details */}
-        <div className="w-full lg:w-2/3 space-y-8">
+        <div className="w-full lg:w-2/3 space-y-8 min-w-0">
           
           {/* Image Gallery */}
-          <div className="w-full aspect-video bg-black/95 rounded-xl overflow-hidden flex overflow-x-auto snap-x snap-mandatory hide-scrollbar relative shadow-md border">
+          <div className="w-full aspect-video bg-black/95 rounded-2xl overflow-hidden flex overflow-x-auto snap-x snap-mandatory hide-scrollbar relative shadow-md border border-slate-200">
             {property.mediaUrls && property.mediaUrls.length > 0 ? (
               property.mediaUrls.map((url, idx) => (
                 <div key={idx} className="h-full flex-shrink-0 w-full snap-center flex items-center justify-center p-0 md:p-2">
@@ -171,14 +177,14 @@ export default function PropertyDetailPage({ params }: { params: Promise<{ id: s
                 </div>
               ))
             ) : (
-              <div className="w-full h-full flex items-center justify-center text-gray-400 font-medium">No media available</div>
+              <div className="w-full h-full flex items-center justify-center text-gray-400 font-medium text-sm">No media available</div>
             )}
             <div className="absolute top-4 left-4 flex flex-col gap-2">
-              <Badge className="shadow-md text-sm py-1 px-3 font-bold w-fit" variant={property.type === "RENT" ? "secondary" : "default"}>
+              <Badge className="shadow-md text-xs py-1 px-3 font-bold w-fit bg-emerald-600 text-white" variant={property.type === "RENT" ? "secondary" : "default"}>
                 FOR {property.type}
               </Badge>
               {property.status !== 'AVAILABLE' && (
-                <Badge className="shadow-md text-sm py-1 px-3 font-black tracking-widest w-fit bg-red-600 text-white hover:bg-red-700">
+                <Badge className="shadow-md text-xs py-1 px-3 font-black tracking-widest w-fit bg-red-600 text-white hover:bg-red-700">
                   {property.status}
                 </Badge>
               )}
@@ -186,11 +192,17 @@ export default function PropertyDetailPage({ params }: { params: Promise<{ id: s
           </div>
 
           {/* Core Specs */}
-          <Card className="border-0 shadow-sm bg-white">
+          <Card className="border border-slate-100 shadow-xs bg-white rounded-2xl">
             <CardContent className="p-6">
-              <div className="flex flex-wrap gap-8 text-gray-700">
-                <div className="flex items-center gap-3 text-lg font-semibold"><Bed size={28} className="text-muted-foreground/70" /> {property.beds} Bedrooms</div>
-                <div className="flex items-center gap-3 text-lg font-semibold"><Bath size={28} className="text-muted-foreground/70" /> {property.baths} Bathrooms</div>
+              <div className="grid grid-cols-2 sm:grid-cols-2 gap-4 text-gray-700">
+                <div className="flex items-center gap-3 text-base sm:text-lg font-semibold min-w-0">
+                  <Bed size={26} className="text-emerald-600 shrink-0" /> 
+                  <span className="truncate">{property.beds} Bedrooms</span>
+                </div>
+                <div className="flex items-center gap-3 text-base sm:text-lg font-semibold min-w-0">
+                  <Bath size={26} className="text-emerald-600 shrink-0" /> 
+                  <span className="truncate">{property.baths} Bathrooms</span>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -219,16 +231,16 @@ export default function PropertyDetailPage({ params }: { params: Promise<{ id: s
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
                   <div className="p-4 bg-white rounded-xl border border-emerald-200 shadow-xs">
                     <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Per Person Share</p>
-                    <p className="text-2xl font-black text-emerald-700">
-                      PKR {Math.round(property.price / (property.roommatesCount || 1)).toLocaleString()}
+                    <p className="text-xl sm:text-2xl font-black text-emerald-700 break-words">
+                      {formatPakistaniCurrency(Math.round(property.price / (property.roommatesCount || 1)))}
                       <span className="text-xs font-normal text-slate-500"> / month</span>
                     </p>
                   </div>
 
                   <div className="p-4 bg-white rounded-xl border border-emerald-200 shadow-xs">
                     <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Total Property Rent</p>
-                    <p className="text-2xl font-bold text-slate-800">
-                      PKR {property.price.toLocaleString()}
+                    <p className="text-xl sm:text-2xl font-bold text-slate-800 break-words">
+                      {formatPakistaniCurrency(property.price)}
                       <span className="text-xs font-normal text-slate-500"> / month</span>
                     </p>
                   </div>
@@ -237,21 +249,49 @@ export default function PropertyDetailPage({ params }: { params: Promise<{ id: s
             </Card>
           )}
 
-          {/* Description */}
-          <Card className="border-0 shadow-sm bg-white">
+          {/* Description Card with Read More Toggle */}
+          <Card className="border border-slate-100 shadow-xs bg-white rounded-2xl">
             <CardContent className="p-6 md:p-8">
-              <h3 className="text-2xl font-bold mb-6 tracking-tight text-gray-900 border-b pb-4">Overview</h3>
-              <p className="text-gray-600 whitespace-pre-wrap leading-relaxed text-lg">{property.description}</p>
+              <h3 className="text-xl font-bold mb-4 tracking-tight text-gray-900 border-b border-slate-100 pb-3">Overview</h3>
+              <div className="relative">
+                <p className="text-gray-600 whitespace-pre-wrap leading-relaxed text-sm md:text-base break-words overflow-hidden">
+                  {isDescriptionLong && !isDescriptionExpanded 
+                    ? `${property.description.slice(0, 300)}...` 
+                    : property.description}
+                </p>
+                {isDescriptionLong && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setIsDescriptionExpanded(!isDescriptionExpanded)}
+                    className="mt-3 text-emerald-700 font-bold text-xs p-0 hover:bg-transparent flex items-center gap-1 hover:text-emerald-800"
+                  >
+                    {isDescriptionExpanded ? (
+                      <>Show Less <ChevronUp size={14} /></>
+                    ) : (
+                      <>Read Full Description <ChevronDown size={14} /></>
+                    )}
+                  </Button>
+                )}
+              </div>
             </CardContent>
           </Card>
         </div>
 
         {/* Right Column: Sticky Price & Contact Card */}
-        <div className="w-full lg:w-1/3 lg:sticky lg:top-24 space-y-6">
+        <div className="w-full lg:w-1/3 lg:sticky lg:top-24 space-y-6 min-w-0">
           <Card className="border-0 shadow-xl bg-white overflow-hidden rounded-2xl ring-1 ring-black/5">
-            <div className="bg-primary/5 p-6 border-b border-primary/10">
-              <p className="text-xs font-bold text-primary/70 uppercase tracking-widest mb-1.5">Asking Price</p>
-              <h2 className="text-3xl md:text-4xl font-black text-primary">PKR {property.price.toLocaleString()}</h2>
+            <div className="bg-emerald-50/60 p-6 border-b border-emerald-100">
+              <p className="text-xs font-bold text-emerald-800 uppercase tracking-widest mb-1.5">Asking Price</p>
+              <h2 className="text-2xl sm:text-3xl md:text-4xl font-black text-emerald-700 break-words tracking-tight">
+                {formatPakistaniCurrency(property.price)}
+              </h2>
+              {property.price >= 100000 && (
+                <p className="text-xs text-slate-500 font-semibold mt-1">
+                  (PKR {property.price.toLocaleString()})
+                </p>
+              )}
             </div>
             
             <CardContent className="p-6">

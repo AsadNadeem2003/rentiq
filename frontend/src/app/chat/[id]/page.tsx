@@ -83,7 +83,7 @@ export default function ChatRoomPage({ params }: { params: Promise<{ id: string 
       } catch (error) {
         console.error("Failed to load chat", error);
         alert("Failed to load conversation");
-        router.push("/dashboard");
+        router.push("/my-activity");
       } finally {
         setLoading(false);
       }
@@ -176,7 +176,7 @@ export default function ChatRoomPage({ params }: { params: Promise<{ id: string 
         {/* Chat Header */}
         <div className="h-20 border-b bg-gray-50/80 px-6 flex items-center justify-between shadow-sm z-10 shrink-0">
           <div className="flex items-center gap-4">
-            <Link href="/dashboard" className="text-gray-400 hover:text-gray-600 transition-colors">
+            <Link href="/my-activity" className="text-gray-400 hover:text-gray-600 transition-colors">
               <ArrowLeft size={24} />
             </Link>
             <Avatar className="h-10 w-10 border shadow-sm">
