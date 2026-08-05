@@ -5,6 +5,7 @@ import { AuthModule } from './auth/auth.module';
 import { PropertiesModule } from './properties/properties.module';
 import { ConversationsModule } from './conversations/conversations.module';
 import { ChatModule } from './chat/chat.module';
+import { CryptoModule } from './crypto/crypto.module';
 
 import { AppController } from './app.controller';
 
@@ -21,6 +22,8 @@ import { AppController } from './app.controller';
   imports: [
     // Load .env file and make ConfigService globally available
     ConfigModule.forRoot({ isGlobal: true }),
+    // AES-256-GCM encryption for message text (globally available)
+    CryptoModule,
     // Database connection (globally available)
     PrismaModule,
     // Authentication (signup, login, JWT)

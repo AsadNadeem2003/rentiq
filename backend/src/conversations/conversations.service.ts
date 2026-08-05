@@ -4,10 +4,14 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { CryptoService } from '../crypto/crypto.service';
 
 @Injectable()
 export class ConversationsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private crypto: CryptoService,
+  ) {}
 
   /**
    * Create or fetch a conversation.
@@ -66,7 +70,7 @@ export class ConversationsService {
    * Get all conversations where the user is either the buyer or the owner.
    */
   async getUserConversations(userId: string) {
-    return this.prisma.conversation.findMany({
+    const conversations = await this.prisma.conversation.findMany({
       where: {
         OR: [{ buyerId: userId }, { ownerId: userId }],
       },
@@ -83,6 +87,15 @@ export class ConversationsService {
       },
       orderBy: { createdAt: 'desc' },
     });
+
+    // Decrypt the latest message preview for each conversation
+    return conversations.map((conv) => ({
+      ...conv,
+      messages: conv.messages.map((msg) => ({
+        ...msg,
+        text: this.crypto.safeDecrypt(msg.text),
+      })),
+    }));
   }
 
   /**
@@ -154,8 +167,14 @@ export class ConversationsService {
       this.prisma.message.count({ where: { conversationId } }),
     ]);
 
+    // Decrypt each message before returning to the client
+    const decryptedMessages = messages.map((msg) => ({
+      ...msg,
+      text: this.crypto.safeDecrypt(msg.text),
+    }));
+
     return {
-      data: messages,
+      data: decryptedMessages,
       meta: {
         total,
         page,
@@ -193,11 +212,13 @@ export class ConversationsService {
       );
     }
 
-    return this.prisma.message.create({
+    const encryptedText = this.crypto.encrypt(text);
+
+    const message = await this.prisma.message.create({
       data: {
         conversationId,
         senderId: userId,
-        text,
+        text: encryptedText, // Store encrypted
       },
       include: {
         sender: {
@@ -205,5 +226,8 @@ export class ConversationsService {
         },
       },
     });
+
+    // Return the decrypted version to the caller (client sees plain text)
+    return { ...message, text };
   }
 }

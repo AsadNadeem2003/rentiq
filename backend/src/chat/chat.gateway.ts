@@ -11,10 +11,14 @@ import {
 import { Server, Socket } from 'socket.io';
 import { PrismaService } from '../prisma/prisma.service';
 import { JwtService } from '@nestjs/jwt';
+import { CryptoService } from '../crypto/crypto.service';
 
 @WebSocketGateway({
   cors: {
-    origin: '*', // For development. Should restrict to frontend URL in production
+    // Restrict to frontend URL only. In development this is localhost:3000.
+    // In production, set FRONTEND_URL env variable to your deployed domain.
+    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+    credentials: true,
   },
 })
 export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
@@ -24,6 +28,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
+    private readonly crypto: CryptoService,
   ) {}
 
   /**
@@ -126,12 +131,13 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       );
     }
 
-    // 2. Write to DB FIRST (No history loss guarantee)
+    // 2. Write to DB FIRST (No history loss guarantee) — store encrypted
+    const encryptedText = this.crypto.encrypt(text);
     const message = await this.prisma.message.create({
       data: {
         conversationId,
         senderId: userId,
-        text,
+        text: encryptedText, // Encrypted ciphertext stored in DB
       },
       include: {
         sender: {
@@ -140,10 +146,13 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       },
     });
 
+    // Broadcast the decrypted message (clients always receive plain text)
+    const broadcastMessage = { ...message, text };
+
     // 3. Broadcast to everyone in the room (including sender to update their UI)
     this.server
       .to(`conversation:${conversationId}`)
-      .emit('newMessage', message);
+      .emit('newMessage', broadcastMessage);
 
     // 4. Send notification to the OTHER participant's personal room
     const recipientId =
@@ -155,7 +164,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       conversationId,
       senderName: message.sender.name,
       propertyTitle: conversation.property.title,
-      text: message.text,
+      text, // Plain text for notification display
       createdAt: message.createdAt,
     });
 

@@ -21,6 +21,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
+import { formatPakistaniCurrency } from "@/lib/utils";
 
 // Dynamically import Map with SSR disabled
 const LocationPickerMap = dynamic(
@@ -46,12 +47,12 @@ export default function EditPropertyPage({ params }: { params: Promise<{ id: str
     description: "",
     price: "",
     type: "RENT",
-    beds: "",
-    baths: "",
-    city: "",
+    beds: "1",
+    baths: "1",
+    city: "Lahore",
     area: "",
-    lat: 0,
-    lng: 0,
+    lat: 31.5204,
+    lng: 74.3587,
     isRoommateAllowed: false,
     roommatesCount: "2",
   });
@@ -63,29 +64,32 @@ export default function EditPropertyPage({ params }: { params: Promise<{ id: str
     const fetchProperty = async () => {
       try {
         const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/properties/${id}`);
-        const p = response.data;
+        const prop = response.data;
+        
         setFormData({
-          title: p.title || "",
-          description: p.description || "",
-          price: p.price ? p.price.toString() : "",
-          type: p.type || "RENT",
-          beds: p.beds ? p.beds.toString() : "",
-          baths: p.baths ? p.baths.toString() : "",
-          city: p.city || "",
-          area: p.area || "",
-          lat: p.lat || 0,
-          lng: p.lng || 0,
-          isRoommateAllowed: p.isRoommateAllowed || false,
-          roommatesCount: p.roommatesCount ? p.roommatesCount.toString() : "2",
+          title: prop.title || "",
+          description: prop.description || "",
+          price: prop.price?.toString() || "",
+          type: prop.type || "RENT",
+          beds: prop.beds?.toString() || "1",
+          baths: prop.baths?.toString() || "1",
+          city: prop.city || "Lahore",
+          area: prop.area || "",
+          lat: prop.lat || 31.5204,
+          lng: prop.lng || 74.3587,
+          isRoommateAllowed: prop.isRoommateAllowed || false,
+          roommatesCount: prop.roommatesCount?.toString() || "2",
         });
-        setExistingMediaUrls(p.mediaUrls || []);
+
+        setExistingMediaUrls(prop.mediaUrls || []);
       } catch (error) {
-        console.error("Failed to fetch property details for editing", error);
-        toast.error("Failed to load property details");
+        console.error("Failed to load property details", error);
+        toast.error("Failed to load property details.");
       } finally {
         setLoading(false);
       }
     };
+
     fetchProperty();
   }, [id]);
 
@@ -96,7 +100,8 @@ export default function EditPropertyPage({ params }: { params: Promise<{ id: str
   }, [loading, isAuthenticated, router]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleTypeChange = (value: string | null) => {
@@ -110,16 +115,22 @@ export default function EditPropertyPage({ params }: { params: Promise<{ id: str
       ...prev,
       lat,
       lng,
-      ...(city ? { city } : {}),
-      ...(area ? { area } : {}),
+      city: city || prev.city,
+      area: area !== undefined ? area : prev.area,
     }));
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      const selected = Array.from(e.target.files);
-      setNewMediaFiles((prev) => [...prev, ...selected]);
+    if (!e.target.files) return;
+    const selectedFiles = Array.from(e.target.files);
+    
+    const totalMediaCount = existingMediaUrls.length + newMediaFiles.length + selectedFiles.length;
+    if (totalMediaCount > 5) {
+      toast.error("Maximum 5 media files allowed (retained + new).");
+      return;
     }
+
+    setNewMediaFiles((prev) => [...prev, ...selectedFiles]);
   };
 
   const handleRemoveExistingMedia = (index: number) => {
@@ -128,6 +139,12 @@ export default function EditPropertyPage({ params }: { params: Promise<{ id: str
 
   const handleRemoveNewMedia = (index: number) => {
     setNewMediaFiles((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const addPriceAmount = (amountToAdd: number) => {
+    const current = Number(formData.price) || 0;
+    const updated = Math.min(2000000000, current + amountToAdd);
+    setFormData((prev) => ({ ...prev, price: updated.toString() }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -143,7 +160,9 @@ export default function EditPropertyPage({ params }: { params: Promise<{ id: str
       data.append("beds", formData.beds);
       data.append("baths", formData.baths);
       data.append("city", formData.city);
-      if (formData.area) data.append("area", formData.area);
+      if (formData.area && formData.area.trim()) {
+        data.append("area", formData.area.trim());
+      }
       data.append("lat", formData.lat.toString());
       data.append("lng", formData.lng.toString());
       data.append("isRoommateAllowed", formData.isRoommateAllowed.toString());
@@ -169,7 +188,12 @@ export default function EditPropertyPage({ params }: { params: Promise<{ id: str
       router.push(`/properties/${id}`);
     } catch (error: any) {
       console.error("Failed to update property", error);
-      toast.error(error.response?.data?.message || "Failed to update property.");
+      const msg = error.response?.data?.message;
+      if (Array.isArray(msg)) {
+        toast.error(msg.join(" • "));
+      } else {
+        toast.error(msg || "Failed to update property. Please check input limits.");
+      }
     } finally {
       setSaving(false);
     }
@@ -228,11 +252,12 @@ export default function EditPropertyPage({ params }: { params: Promise<{ id: str
             </CardHeader>
             <CardContent className="p-6 md:p-8 space-y-6">
               <div className="space-y-2">
-                <Label htmlFor="title" className="text-xs font-bold text-slate-700 uppercase tracking-wider">Property Title</Label>
+                <Label htmlFor="title" className="text-xs font-bold text-slate-700 uppercase tracking-wider">Property Title (Max 100 chars)</Label>
                 <Input 
                   required 
                   id="title" 
                   name="title" 
+                  maxLength={100}
                   value={formData.title} 
                   onChange={handleChange} 
                   className="h-11 rounded-xl border-slate-200 font-medium" 
@@ -240,11 +265,12 @@ export default function EditPropertyPage({ params }: { params: Promise<{ id: str
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="description" className="text-xs font-bold text-slate-700 uppercase tracking-wider">Description</Label>
+                <Label htmlFor="description" className="text-xs font-bold text-slate-700 uppercase tracking-wider">Description (Max 3000 chars)</Label>
                 <Textarea 
                   required 
                   id="description" 
                   name="description" 
+                  maxLength={3000}
                   value={formData.description} 
                   onChange={handleChange} 
                   className="min-h-[120px] rounded-xl border-slate-200 font-medium resize-none" 
@@ -266,13 +292,13 @@ export default function EditPropertyPage({ params }: { params: Promise<{ id: str
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="beds" className="text-xs font-bold text-slate-700 uppercase tracking-wider">Bedrooms</Label>
-                  <Input required id="beds" type="number" min="0" name="beds" value={formData.beds} onChange={handleChange} className="h-11 rounded-xl border-slate-200 font-medium" />
+                  <Label htmlFor="beds" className="text-xs font-bold text-slate-700 uppercase tracking-wider">Bedrooms (0 - 30)</Label>
+                  <Input required id="beds" type="number" min="0" max="30" name="beds" value={formData.beds} onChange={handleChange} className="h-11 rounded-xl border-slate-200 font-medium" />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="baths" className="text-xs font-bold text-slate-700 uppercase tracking-wider">Bathrooms</Label>
-                  <Input required id="baths" type="number" min="0" name="baths" value={formData.baths} onChange={handleChange} className="h-11 rounded-xl border-slate-200 font-medium" />
+                  <Label htmlFor="baths" className="text-xs font-bold text-slate-700 uppercase tracking-wider">Bathrooms (0 - 30)</Label>
+                  <Input required id="baths" type="number" min="0" max="30" name="baths" value={formData.baths} onChange={handleChange} className="h-11 rounded-xl border-slate-200 font-medium" />
                 </div>
               </div>
             </CardContent>
@@ -291,8 +317,8 @@ export default function EditPropertyPage({ params }: { params: Promise<{ id: str
                 </div>
               </div>
             </CardHeader>
-            <CardContent className="p-6 md:p-8">
-              <div className="space-y-2 max-w-md">
+            <CardContent className="p-6 md:p-8 space-y-4">
+              <div className="space-y-2 max-w-lg">
                 <Label htmlFor="price" className="text-xs font-bold text-slate-700 uppercase tracking-wider">Price (PKR)</Label>
                 <div className="relative">
                   <span className="absolute left-3.5 top-3 text-xs font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-lg border border-emerald-100">
@@ -302,12 +328,48 @@ export default function EditPropertyPage({ params }: { params: Promise<{ id: str
                     required 
                     id="price" 
                     type="number" 
-                    min="0" 
+                    min="1000" 
+                    max="2000000000"
                     name="price" 
                     value={formData.price} 
                     onChange={handleChange} 
+                    placeholder="e.g. 25000000"
                     className="h-11 pl-16 rounded-xl border-slate-200 font-bold text-base text-slate-900" 
                   />
+                </div>
+
+                {/* Live Pakistani Currency Preview Badge */}
+                {formData.price && !isNaN(Number(formData.price)) && Number(formData.price) > 0 && (
+                  <div className="p-3 bg-emerald-50/90 rounded-xl border border-emerald-200/80 text-xs font-semibold text-emerald-900 flex items-center justify-between gap-2 flex-wrap animate-in fade-in-50 duration-200">
+                    <span className="flex items-center gap-1.5">
+                      💡 Live Format: <strong className="text-emerald-700 text-sm font-black">{formatPakistaniCurrency(Number(formData.price))}</strong>
+                    </span>
+                    <span className="text-[11px] text-slate-500 font-medium">
+                      (PKR {Number(formData.price).toLocaleString()})
+                    </span>
+                  </div>
+                )}
+
+                {/* Quick 1-Click Price Adder Buttons */}
+                <div className="pt-2">
+                  <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">Quick Add Amounts:</p>
+                  <div className="flex flex-wrap gap-2">
+                    <Button type="button" variant="outline" size="sm" onClick={() => addPriceAmount(100000)} className="h-8 text-xs font-bold rounded-lg border-emerald-200 text-emerald-700 hover:bg-emerald-50">
+                      + 1 Lac
+                    </Button>
+                    <Button type="button" variant="outline" size="sm" onClick={() => addPriceAmount(500000)} className="h-8 text-xs font-bold rounded-lg border-emerald-200 text-emerald-700 hover:bg-emerald-50">
+                      + 5 Lac
+                    </Button>
+                    <Button type="button" variant="outline" size="sm" onClick={() => addPriceAmount(5000000)} className="h-8 text-xs font-bold rounded-lg border-emerald-200 text-emerald-700 hover:bg-emerald-50">
+                      + 50 Lac
+                    </Button>
+                    <Button type="button" variant="outline" size="sm" onClick={() => addPriceAmount(10000000)} className="h-8 text-xs font-bold rounded-lg border-emerald-200 text-emerald-700 hover:bg-emerald-50">
+                      + 1 Crore
+                    </Button>
+                    <Button type="button" variant="ghost" size="sm" onClick={() => setFormData((prev) => ({ ...prev, price: "" }))} className="h-8 text-xs font-bold rounded-lg text-slate-400 hover:text-red-600">
+                      Clear
+                    </Button>
+                  </div>
                 </div>
               </div>
             </CardContent>
