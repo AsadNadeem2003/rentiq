@@ -5,6 +5,8 @@ import {
   IsIn,
   IsInt,
   Min,
+  Max,
+  Length,
   IsOptional,
   IsArray,
   IsBoolean,
@@ -13,23 +15,22 @@ import { Type, Transform } from 'class-transformer';
 
 /**
  * DTO for POST /properties — creating a new property listing.
- *
- * The @Type(() => Number) decorator is needed because form-data
- * sends everything as strings. class-transformer converts them
- * to the correct types before validation runs.
  */
 export class CreatePropertyDto {
   @IsString()
   @IsNotEmpty()
+  @Length(5, 100, { message: 'Title must be between 5 and 100 characters' })
   title!: string;
 
   @IsString()
   @IsNotEmpty()
+  @Length(15, 3000, { message: 'Description must be between 15 and 3000 characters' })
   description!: string;
 
   @Type(() => Number)
   @IsNumber()
-  @Min(0)
+  @Min(1000, { message: 'Price must be at least PKR 1,000' })
+  @Max(2000000000, { message: 'Price cannot exceed PKR 2 Billion (200 Crore)' })
   price!: number;
 
   @IsString()
@@ -38,20 +39,24 @@ export class CreatePropertyDto {
 
   @Type(() => Number)
   @IsInt()
-  @Min(0)
+  @Min(0, { message: 'Bedrooms cannot be negative' })
+  @Max(30, { message: 'Maximum 30 bedrooms allowed' })
   beds!: number;
 
   @Type(() => Number)
   @IsInt()
-  @Min(0)
+  @Min(0, { message: 'Bathrooms cannot be negative' })
+  @Max(30, { message: 'Maximum 30 bathrooms allowed' })
   baths!: number;
 
   @IsString()
   @IsNotEmpty()
+  @Length(2, 60, { message: 'City name must be between 2 and 60 characters' })
   city!: string;
 
   @IsOptional()
   @IsString()
+  @Length(2, 60, { message: 'Area name must be between 2 and 60 characters' })
   area?: string;
 
   @Type(() => Number)
@@ -71,28 +76,33 @@ export class CreatePropertyDto {
   @Type(() => Number)
   @IsInt()
   @Min(1)
+  @Max(10)
   roommatesCount?: number;
 }
 
 /**
  * DTO for PATCH /properties/:id — updating an existing listing.
- * All fields are optional since it's a partial update.
  */
 export class UpdatePropertyDto {
   @IsOptional()
+  @Transform(({ value }) => (!value || value === '' ? undefined : value))
   @IsString()
   @IsNotEmpty()
+  @Length(5, 100, { message: 'Title must be between 5 and 100 characters' })
   title?: string;
 
   @IsOptional()
+  @Transform(({ value }) => (!value || value === '' ? undefined : value))
   @IsString()
   @IsNotEmpty()
+  @Length(15, 3000, { message: 'Description must be between 15 and 3000 characters' })
   description?: string;
 
   @IsOptional()
   @Type(() => Number)
   @IsNumber()
-  @Min(0)
+  @Min(1000, { message: 'Price must be at least PKR 1,000' })
+  @Max(2000000000, { message: 'Price cannot exceed PKR 2 Billion (200 Crore)' })
   price?: number;
 
   @IsOptional()
@@ -103,22 +113,27 @@ export class UpdatePropertyDto {
   @IsOptional()
   @Type(() => Number)
   @IsInt()
-  @Min(0)
+  @Min(0, { message: 'Bedrooms cannot be negative' })
+  @Max(30, { message: 'Maximum 30 bedrooms allowed' })
   beds?: number;
 
   @IsOptional()
   @Type(() => Number)
   @IsInt()
-  @Min(0)
+  @Min(0, { message: 'Bathrooms cannot be negative' })
+  @Max(30, { message: 'Maximum 30 bathrooms allowed' })
   baths?: number;
 
   @IsOptional()
   @IsString()
   @IsNotEmpty()
+  @Length(2, 60, { message: 'City name must be between 2 and 60 characters' })
   city?: string;
 
   @IsOptional()
+  @Transform(({ value }) => (!value || value === '' || value === 'null' || value === 'undefined' ? undefined : value))
   @IsString()
+  @Length(2, 60, { message: 'Area name must be between 2 and 60 characters' })
   area?: string;
 
   @IsOptional()
@@ -156,6 +171,7 @@ export class UpdatePropertyDto {
   @Type(() => Number)
   @IsInt()
   @Min(1)
+  @Max(10)
   roommatesCount?: number;
 }
 

@@ -3,3 +3,7 @@ node_modules
 .env
 
 /generated/prisma
+
+# Compiled output — never commit build artifacts
+dist/
+*.tsbuildinfo
