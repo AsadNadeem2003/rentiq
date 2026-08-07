@@ -2,27 +2,20 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
+import helmet from 'helmet';
 import * as dns from 'dns';
 
 dns.setDefaultResultOrder('ipv4first');
 
-/**
- * Bootstrap function — starts the NestJS application.
- *
- * Key configurations:
- *
- * 1. ValidationPipe (global) — This is what makes our DTOs actually work.
- *    Without this, the @IsEmail(), @IsNotEmpty() decorators would be ignored.
- *    - whitelist: true → strips any fields not defined in the DTO (security)
- *    - forbidNonWhitelisted: true → throws an error if unknown fields are sent
- *    - transform: true → auto-converts types (e.g., string "42" → number 42)
- *
- * 2. CORS — Enabled so the Next.js frontend (different port) can call the API.
- *
- * 3. Port 3001 — Our backend runs on 3001, frontend will run on 3000.
- */
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  // 1. Helmet Security Headers — protects against Clickjacking, XSS, MIME sniffing
+  app.use(
+    helmet({
+      crossOriginResourcePolicy: { policy: 'cross-origin' },
+    }),
+  );
 
   // Enable global validation on all incoming requests
   app.useGlobalPipes(
@@ -53,24 +46,26 @@ async function bootstrap() {
 
   // Enable CORS so the Next.js frontend can make API calls
   app.enableCors({
-    origin: 'http://localhost:3000',
+    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
     credentials: true,
   });
 
   // API prefix: all routes become /api/auth/..., /api/properties/...
   app.setGlobalPrefix('api');
 
-  // Set up Swagger API Documentation
-  const config = new DocumentBuilder()
-    .setTitle('Rentiq (KirayaPad) API')
-    .setDescription(
-      'The Rentiq API documentation for properties, users, and chat.',
-    )
-    .setVersion('1.0')
-    .addBearerAuth()
-    .build();
-  const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api/docs', app, document);
+  // 2. Swagger Production Guard — only expose API docs route in development
+  if (process.env.NODE_ENV !== 'production') {
+    const config = new DocumentBuilder()
+      .setTitle('Rentiq (KirayaPad) API')
+      .setDescription(
+        'The Rentiq API documentation for properties, users, and chat.',
+      )
+      .setVersion('1.0')
+      .addBearerAuth()
+      .build();
+    const document = SwaggerModule.createDocument(app, config);
+    SwaggerModule.setup('api/docs', app, document);
+  }
 
   await app.listen(3001);
   console.log('🏠 Rentiq backend running on http://localhost:3001');

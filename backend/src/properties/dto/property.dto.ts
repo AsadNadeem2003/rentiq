@@ -24,7 +24,7 @@ export class CreatePropertyDto {
 
   @IsString()
   @IsNotEmpty()
-  @Length(15, 3000, { message: 'Description must be between 15 and 3000 characters' })
+  @Length(15, 2000, { message: 'Description must be between 15 and 2000 characters' })
   description!: string;
 
   @Type(() => Number)
@@ -78,6 +78,9 @@ export class CreatePropertyDto {
   @Min(1)
   @Max(10)
   roommatesCount?: number;
+
+  @IsOptional()
+  media?: any;
 }
 
 /**
@@ -95,7 +98,7 @@ export class UpdatePropertyDto {
   @Transform(({ value }) => (!value || value === '' ? undefined : value))
   @IsString()
   @IsNotEmpty()
-  @Length(15, 3000, { message: 'Description must be between 15 and 3000 characters' })
+  @Length(15, 2000, { message: 'Description must be between 15 and 2000 characters' })
   description?: string;
 
   @IsOptional()
@@ -173,6 +176,9 @@ export class UpdatePropertyDto {
   @Min(1)
   @Max(10)
   roommatesCount?: number;
+
+  @IsOptional()
+  media?: any;
 }
 
 /**

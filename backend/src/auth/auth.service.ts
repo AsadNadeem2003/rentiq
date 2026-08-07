@@ -19,11 +19,14 @@ import { SignupDto, LoginDto } from './dto/auth.dto';
  * different hashes. The salt rounds (10) determine computation cost —
  * higher = slower but more secure against brute force.
  */
+import { CryptoService } from '../crypto/crypto.service';
+
 @Injectable()
 export class AuthService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
+    private readonly cryptoService: CryptoService,
   ) {}
 
   async signup(dto: SignupDto): Promise<{ accessToken: string }> {
@@ -75,10 +78,11 @@ export class AuthService {
   }
 
   async verifyTenant(userId: string, cnicNumber: string) {
+    const encryptedCnic = this.cryptoService.encrypt(cnicNumber);
     const user = await this.prisma.user.update({
       where: { id: userId },
       data: {
-        cnicNumber,
+        cnicNumber: encryptedCnic,
         isVerified: true,
         verificationStatus: 'VERIFIED',
       },
@@ -92,7 +96,10 @@ export class AuthService {
       },
     });
 
-    return user;
+    return {
+      ...user,
+      cnicNumber: user.cnicNumber ? this.cryptoService.safeDecrypt(user.cnicNumber) : null,
+    };
   }
 
   async getProfile(userId: string) {
@@ -112,7 +119,10 @@ export class AuthService {
       throw new UnauthorizedException('User not found');
     }
 
-    return user;
+    return {
+      ...user,
+      cnicNumber: user.cnicNumber ? this.cryptoService.safeDecrypt(user.cnicNumber) : null,
+    };
   }
 
   /**

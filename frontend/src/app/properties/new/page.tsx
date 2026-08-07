@@ -200,7 +200,7 @@ export default function NewPropertyPage() {
             </CardHeader>
             <CardContent className="p-6 md:p-8 space-y-6">
               <div className="space-y-2">
-                <Label htmlFor="title" className="text-xs font-bold text-slate-700 uppercase tracking-wider">Property Title (Max 100 chars)</Label>
+                <Label htmlFor="title" className="text-xs font-bold text-slate-700 uppercase tracking-wider">Property Title</Label>
                 <Input 
                   required 
                   id="title" 
@@ -214,12 +214,12 @@ export default function NewPropertyPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="description" className="text-xs font-bold text-slate-700 uppercase tracking-wider">Description (Max 3000 chars)</Label>
+                <Label htmlFor="description" className="text-xs font-bold text-slate-700 uppercase tracking-wider">Description</Label>
                 <Textarea 
                   required 
                   id="description" 
                   name="description" 
-                  maxLength={3000}
+                  maxLength={2000}
                   value={formData.description} 
                   onChange={handleChange} 
                   className="min-h-[120px] rounded-xl border-slate-200 font-medium resize-none" 
@@ -242,12 +242,12 @@ export default function NewPropertyPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="beds" className="text-xs font-bold text-slate-700 uppercase tracking-wider">Bedrooms (0 - 30)</Label>
+                  <Label htmlFor="beds" className="text-xs font-bold text-slate-700 uppercase tracking-wider">Bedrooms</Label>
                   <Input required id="beds" type="number" min="0" max="30" name="beds" value={formData.beds} onChange={handleChange} className="h-11 rounded-xl border-slate-200 font-medium" />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="baths" className="text-xs font-bold text-slate-700 uppercase tracking-wider">Bathrooms (0 - 30)</Label>
+                  <Label htmlFor="baths" className="text-xs font-bold text-slate-700 uppercase tracking-wider">Bathrooms</Label>
                   <Input required id="baths" type="number" min="0" max="30" name="baths" value={formData.baths} onChange={handleChange} className="h-11 rounded-xl border-slate-200 font-medium" />
                 </div>
               </div>

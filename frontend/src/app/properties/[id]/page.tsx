@@ -4,7 +4,7 @@ import { useEffect, useState, use } from "react";
 import axios from "axios";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
-import { Bed, Bath, MapPin, Loader2, MessageCircle, BadgeCheck, Users, Navigation, Pencil, Trash2, ChevronDown, ChevronUp } from "lucide-react";
+import { Bed, Bath, MapPin, Loader2, MessageCircle, BadgeCheck, Users, Navigation, Pencil, Trash2, ChevronDown, ChevronUp, Maximize2, ChevronLeft, ChevronRight, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -49,6 +49,18 @@ export default function PropertyDetailsPage({ params }: { params: Promise<{ id: 
   const [loading, setLoading] = useState(true);
   const [messaging, setMessaging] = useState(false);
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
+  const [activeImageIndex, setActiveImageIndex] = useState(0);
+  const [isLightboxOpen, setIsLightboxOpen] = useState(false);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setIsLightboxOpen(false);
+    };
+    if (isLightboxOpen) {
+      window.addEventListener("keydown", handleKeyDown);
+    }
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isLightboxOpen]);
 
   useEffect(() => {
     const fetchProperty = async () => {
@@ -151,45 +163,81 @@ export default function PropertyDetailsPage({ params }: { params: Promise<{ id: 
   const isDescriptionLong = property.description && property.description.length > 300;
 
   return (
-    <div className="max-w-7xl mx-auto p-4 md:p-8 mt-4 mb-16">
+    <div className="w-full max-w-7xl mx-auto p-4 md:p-8 mt-2 md:mt-4 mb-16 overflow-x-hidden">
       
       {/* Title Header (Mobile & Desktop) */}
-      <div className="mb-6">
-        <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-gray-900 mb-2 tracking-tight break-words leading-tight">
+      <div className="mb-4 md:mb-6">
+        <h1 className="text-xl sm:text-3xl md:text-4xl font-extrabold text-gray-900 mb-2 tracking-tight break-words leading-snug">
           {property.title}
         </h1>
-        <p className="flex items-center text-muted-foreground font-medium text-base sm:text-lg gap-1.5 break-words">
-          <MapPin size={20} className="shrink-0 text-emerald-600" /> {property.area ? `${property.area}, ${property.city}` : property.city}
+        <p className="flex items-center text-muted-foreground font-medium text-sm sm:text-lg gap-1.5 break-words">
+          <MapPin size={18} className="shrink-0 text-emerald-600" /> {property.area ? `${property.area}, ${property.city}` : property.city}
         </p>
       </div>
 
-      <div className="flex flex-col lg:flex-row gap-8 items-start">
+      <div className="flex flex-col lg:flex-row gap-6 md:gap-8 items-start w-full">
         
         {/* Left Column: Image Gallery & Details */}
-        <div className="w-full lg:w-2/3 space-y-8 min-w-0">
+        <div className="w-full lg:w-2/3 space-y-6 md:space-y-8 min-w-0">
           
-          {/* Image Gallery */}
-          <div className="w-full aspect-video bg-black/95 rounded-2xl overflow-hidden flex overflow-x-auto snap-x snap-mandatory hide-scrollbar relative shadow-md border border-slate-200">
+          {/* Main Image View */}
+          <div 
+            onClick={() => property.mediaUrls && property.mediaUrls.length > 0 && setIsLightboxOpen(true)}
+            className="w-full aspect-[4/3] sm:aspect-video bg-black/95 rounded-2xl md:rounded-3xl overflow-hidden relative shadow-md border border-slate-200 flex items-center justify-center cursor-pointer group"
+          >
             {property.mediaUrls && property.mediaUrls.length > 0 ? (
-              property.mediaUrls.map((url, idx) => (
-                <div key={idx} className="h-full flex-shrink-0 w-full snap-center flex items-center justify-center p-0 md:p-2">
-                  <img src={url} alt={`Property view ${idx + 1}`} className="max-h-full max-w-full object-contain drop-shadow-xl" />
+              <>
+                <img 
+                  src={property.mediaUrls[activeImageIndex] || property.mediaUrls[0]} 
+                  alt={`${property.title} view ${activeImageIndex + 1}`} 
+                  className="max-h-full max-w-full object-contain drop-shadow-xl group-hover:scale-[1.01] transition-transform duration-300" 
+                />
+                <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
+                  <span className="bg-black/70 text-white text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-1.5 backdrop-blur-xs">
+                    <Maximize2 size={14} /> Click to View Fullscreen
+                  </span>
                 </div>
-              ))
+              </>
             ) : (
               <div className="w-full h-full flex items-center justify-center text-gray-400 font-medium text-sm">No media available</div>
             )}
-            <div className="absolute top-4 left-4 flex flex-col gap-2">
-              <Badge className="shadow-md text-xs py-1 px-3 font-bold w-fit bg-emerald-600 text-white" variant={property.type === "RENT" ? "secondary" : "default"}>
+            
+            {/* Top Badges */}
+            <div className="absolute top-3 left-3 md:top-4 md:left-4 flex flex-col gap-2 z-10 pointer-events-none">
+              <Badge className="shadow-md text-[11px] md:text-xs py-1 px-3 font-bold w-fit bg-emerald-600 text-white" variant={property.type === "RENT" ? "secondary" : "default"}>
                 FOR {property.type}
               </Badge>
               {property.status !== 'AVAILABLE' && (
-                <Badge className="shadow-md text-xs py-1 px-3 font-black tracking-widest w-fit bg-red-600 text-white hover:bg-red-700">
+                <Badge className="shadow-md text-[11px] md:text-xs py-1 px-3 font-black tracking-widest w-fit bg-red-600 text-white hover:bg-red-700">
                   {property.status}
                 </Badge>
               )}
             </div>
+
+            {/* Image Count Indicator */}
+            {property.mediaUrls && property.mediaUrls.length > 1 && (
+              <div className="absolute bottom-3 right-3 bg-black/70 text-white px-3 py-1 rounded-full text-xs font-bold shadow-md backdrop-blur-xs">
+                {activeImageIndex + 1} / {property.mediaUrls.length}
+              </div>
+            )}
           </div>
+
+          {/* Thumbnail Selector Strip (if multiple photos) */}
+          {property.mediaUrls && property.mediaUrls.length > 1 && (
+            <div className="flex gap-2.5 overflow-x-auto pb-2 scrollbar-hide -mt-2">
+              {property.mediaUrls.map((url, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => setActiveImageIndex(idx)}
+                  className={`h-16 w-24 md:h-20 md:w-28 rounded-xl overflow-hidden border-2 flex-shrink-0 bg-slate-100 p-0.5 transition-all ${
+                    activeImageIndex === idx ? "border-emerald-600 ring-2 ring-emerald-600/30 scale-[1.02]" : "border-slate-200 opacity-70 hover:opacity-100"
+                  }`}
+                >
+                  <img src={url} alt={`Thumb ${idx + 1}`} className="w-full h-full object-cover rounded-lg" />
+                </button>
+              ))}
+            </div>
+          )}
 
           {/* Core Specs */}
           <Card className="border border-slate-100 shadow-xs bg-white rounded-2xl">
@@ -394,6 +442,63 @@ export default function PropertyDetailsPage({ params }: { params: Promise<{ id: 
         </div>
 
       </div>
+
+      {/* Lightbox Fullscreen Photo Modal */}
+      {isLightboxOpen && property.mediaUrls && property.mediaUrls.length > 0 && (
+        <div className="fixed inset-0 z-50 bg-black/95 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200">
+          {/* Close Button */}
+          <button
+            onClick={() => setIsLightboxOpen(false)}
+            className="absolute top-4 right-4 text-white/80 hover:text-white p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors z-50 cursor-pointer"
+            aria-label="Close Lightbox"
+          >
+            <X size={28} />
+          </button>
+
+          {/* Counter Badge */}
+          <div className="absolute top-5 left-5 bg-white/10 text-white px-4 py-1.5 rounded-full text-xs font-bold backdrop-blur-md border border-white/10">
+            {activeImageIndex + 1} of {property.mediaUrls.length}
+          </div>
+
+          {/* Main Photo Display */}
+          <div className="relative max-w-6xl max-h-[85vh] w-full h-full flex items-center justify-center">
+            <img
+              src={property.mediaUrls[activeImageIndex]}
+              alt={`Fullscreen property view ${activeImageIndex + 1}`}
+              className="max-w-full max-h-[85vh] object-contain rounded-xl shadow-2xl select-none"
+            />
+          </div>
+
+          {/* Navigation Arrows */}
+          {property.mediaUrls.length > 1 && (
+            <>
+              <button
+                onClick={() =>
+                  setActiveImageIndex((prev) =>
+                    prev === 0 ? property.mediaUrls!.length - 1 : prev - 1
+                  )
+                }
+                className="absolute left-4 top-1/2 -translate-y-1/2 text-white/80 hover:text-white p-3 rounded-full bg-white/10 hover:bg-white/20 transition-colors cursor-pointer"
+                aria-label="Previous photo"
+              >
+                <ChevronLeft size={28} />
+              </button>
+
+              <button
+                onClick={() =>
+                  setActiveImageIndex((prev) =>
+                    prev === property.mediaUrls!.length - 1 ? 0 : prev + 1
+                  )
+                }
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-white/80 hover:text-white p-3 rounded-full bg-white/10 hover:bg-white/20 transition-colors cursor-pointer"
+                aria-label="Next photo"
+              >
+                <ChevronRight size={28} />
+              </button>
+            </>
+          )}
+        </div>
+      )}
     </div>
   );
 }

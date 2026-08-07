@@ -183,8 +183,36 @@ export default function SettingsPage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          {/* Sidebar Navigation */}
-          <div className="md:col-span-1 space-y-1">
+          {/* Sidebar Navigation — horizontal scrollable on mobile, vertical on md+ */}
+          <div className="md:col-span-1">
+            {/* Mobile: horizontal pill row */}
+            <div className="flex md:hidden gap-2 overflow-x-auto pb-2 scrollbar-hide -mx-1 px-1">
+              {[
+                { key: "profile", icon: <User size={15} />, label: "Profile" },
+                { key: "verification", icon: <ShieldCheck size={15} />, label: "Verify" },
+                { key: "preferences", icon: <Sliders size={15} />, label: "Prefs" },
+                { key: "notifications", icon: <Bell size={15} />, label: "Alerts" },
+                { key: "security", icon: <Shield size={15} />, label: "Security" },
+              ].map((tab) => (
+                <button
+                  key={tab.key}
+                  onClick={() => setActiveTab(tab.key as typeof activeTab)}
+                  className={`flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all shrink-0 ${
+                    activeTab === tab.key
+                      ? "bg-emerald-600 text-white shadow-sm"
+                      : "bg-white text-slate-600 border border-slate-200"
+                  }`}
+                >
+                  {tab.icon} {tab.label}
+                  {tab.key === "verification" && isVerified && (
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-300 ml-0.5" />
+                  )}
+                </button>
+              ))}
+            </div>
+
+            {/* Desktop: vertical sidebar */}
+            <div className="hidden md:flex flex-col space-y-1">
             <button
               onClick={() => setActiveTab("profile")}
               className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-semibold rounded-xl transition-all ${
@@ -244,6 +272,7 @@ export default function SettingsPage() {
             >
               <Shield size={18} /> Security & Password
             </button>
+            </div>
           </div>
 
           {/* Settings Main Content Area */}

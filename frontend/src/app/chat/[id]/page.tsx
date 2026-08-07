@@ -174,33 +174,33 @@ export default function ChatRoomPage({ params }: { params: Promise<{ id: string 
       <Card className="flex-1 flex flex-col overflow-hidden border-0 shadow-lg bg-white rounded-xl">
         
         {/* Chat Header */}
-        <div className="h-20 border-b bg-gray-50/80 px-6 flex items-center justify-between shadow-sm z-10 shrink-0">
-          <div className="flex items-center gap-4">
-            <Link href="/my-activity" className="text-gray-400 hover:text-gray-600 transition-colors">
-              <ArrowLeft size={24} />
+        <div className="min-h-[64px] md:h-20 border-b bg-gray-50/80 px-4 md:px-6 py-3 flex items-center justify-between gap-3 shadow-sm z-10 shrink-0">
+          <div className="flex items-center gap-3 min-w-0">
+            <Link href="/my-activity" className="text-gray-400 hover:text-gray-600 transition-colors shrink-0">
+              <ArrowLeft size={22} />
             </Link>
-            <Avatar className="h-10 w-10 border shadow-sm">
+            <Avatar className="h-9 w-9 md:h-10 md:w-10 border shadow-sm shrink-0">
               <AvatarFallback className="bg-primary/10 text-primary font-bold">
                 {otherPersonName?.charAt(0).toUpperCase()}
               </AvatarFallback>
             </Avatar>
-            <div>
-              <div className="flex items-center gap-2">
-                <h2 className="font-bold text-lg leading-tight">{otherPersonName}</h2>
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <h2 className="font-bold text-base md:text-lg leading-tight truncate">{otherPersonName}</h2>
                 {otherPerson?.isVerified && (
-                  <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 text-[10px] font-extrabold px-2 py-0.5 rounded-full border border-emerald-200 shadow-2xs">
-                    <BadgeCheck size={12} className="text-emerald-600" /> Verified Renter 🛡️
+                  <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 text-[10px] font-extrabold px-2 py-0.5 rounded-full border border-emerald-200 shadow-2xs shrink-0">
+                    <BadgeCheck size={12} className="text-emerald-600" /> Verified 🛡️
                   </span>
                 )}
               </div>
-              <Link href={`/properties/${conversation.propertyId}`} className="text-sm text-primary hover:underline truncate max-w-[200px] md:max-w-xs block font-medium">
+              <Link href={`/properties/${conversation.propertyId}`} className="text-xs md:text-sm text-primary hover:underline truncate max-w-[160px] sm:max-w-[220px] md:max-w-xs block font-medium">
                 {conversation.property.title}
               </Link>
             </div>
           </div>
-          <div className="hidden md:block text-right">
+          <div className="hidden sm:block text-right shrink-0">
             <p className="text-xs text-muted-foreground uppercase font-semibold tracking-wider">Asking Price</p>
-            <p className="font-bold text-gray-900">PKR {conversation.property.price.toLocaleString()}</p>
+            <p className="font-bold text-gray-900 text-sm md:text-base">PKR {conversation.property.price.toLocaleString()}</p>
           </div>
         </div>
 

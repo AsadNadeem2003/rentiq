@@ -141,7 +141,7 @@ export default function FeedPage() {
             </div>
 
             {showFilters && (
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-5 bg-slate-50/90 rounded-2xl border border-slate-200/80 animate-in fade-in slide-in-from-top-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 p-4 md:p-5 bg-slate-50/90 rounded-2xl border border-slate-200/80 animate-in fade-in slide-in-from-top-2">
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-slate-600 uppercase tracking-wider">Type</label>
                   <Select value={type} onValueChange={handleTypeChange}>

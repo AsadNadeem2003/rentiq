@@ -77,10 +77,10 @@ export default function MyActivityPage() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto p-4 md:p-8 mt-4">
-      <h1 className="text-3xl font-bold mb-8">My Activity</h1>
+    <div className="max-w-6xl mx-auto p-4 md:p-8 mt-4 mb-16">
+      <h1 className="text-2xl md:text-3xl font-bold mb-6 md:mb-8">My Activity</h1>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* My Listings */}
         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col">
           <div className="flex justify-between items-center mb-6">
@@ -90,16 +90,16 @@ export default function MyActivityPage() {
             </Link>
           </div>
           
-          <div className="flex-1 overflow-y-auto max-h-[500px] pr-2 space-y-4">
+          <div className="flex-1 overflow-y-auto max-h-[400px] md:max-h-[500px] pr-1 space-y-3">
             {properties.length === 0 ? (
               <div className="text-center py-12 text-gray-500 bg-gray-50 rounded-lg border border-dashed">
                 <p>You haven't listed any properties yet.</p>
               </div>
             ) : (
               properties.map(property => (
-                <div key={property.id} className="flex flex-col sm:flex-row items-center gap-4 p-3 border rounded-lg hover:bg-gray-50 transition-colors">
+                <div key={property.id} className="flex flex-col sm:flex-row items-start sm:items-center gap-3 p-3 border rounded-lg hover:bg-gray-50 transition-colors">
                   <Link href={`/properties/${property.id}`} className="flex-1 flex items-center gap-4 min-w-0 w-full">
-                    <div className="w-28 h-20 bg-gray-100 flex items-center justify-center rounded-md flex-shrink-0 p-1 border">
+                    <div className="w-20 h-14 sm:w-28 sm:h-20 bg-gray-100 flex items-center justify-center rounded-md flex-shrink-0 p-1 border">
                       <img 
                         src={property.mediaUrls?.[0] || "https://placehold.co/100x100?text=No+Image"} 
                         alt={property.title} 
@@ -156,7 +156,7 @@ export default function MyActivityPage() {
         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col">
           <h2 className="text-2xl font-bold mb-6">My Conversations</h2>
           
-          <div className="flex-1 overflow-y-auto max-h-[500px] pr-2 space-y-4">
+          <div className="flex-1 overflow-y-auto max-h-[400px] md:max-h-[500px] pr-1 space-y-3">
             {conversations.length === 0 ? (
               <div className="text-center py-12 text-gray-500 bg-gray-50 rounded-lg border border-dashed">
                 <p>No active messages.</p>

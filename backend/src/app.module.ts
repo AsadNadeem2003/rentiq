@@ -1,5 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { APP_GUARD } from '@nestjs/core';
 import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './auth/auth.module';
 import { PropertiesModule } from './properties/properties.module';
@@ -9,19 +11,17 @@ import { CryptoModule } from './crypto/crypto.module';
 
 import { AppController } from './app.controller';
 
-/**
- * AppModule — the root module that ties the entire application together.
- *
- * ConfigModule.forRoot({ isGlobal: true }) loads .env variables and
- * makes ConfigService available everywhere without re-importing.
- *
- * Module import order doesn't matter for functionality, but it's
- * listed logically: config → database → auth → features.
- */
 @Module({
   imports: [
     // Load .env file and make ConfigService globally available
     ConfigModule.forRoot({ isGlobal: true }),
+    // Rate Limiting & Throttling (30 requests per minute default)
+    ThrottlerModule.forRoot([
+      {
+        ttl: 60000,
+        limit: 30,
+      },
+    ]),
     // AES-256-GCM encryption for message text (globally available)
     CryptoModule,
     // Database connection (globally available)
@@ -36,5 +36,11 @@ import { AppController } from './app.controller';
     ChatModule,
   ],
   controllers: [AppController],
+  providers: [
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
+  ],
 })
 export class AppModule {}
