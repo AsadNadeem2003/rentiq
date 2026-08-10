@@ -1,36 +1,31 @@
 import {
   ConflictException,
+  ForbiddenException,
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service';
+import { CryptoService } from '../crypto/crypto.service';
 import { SignupDto, LoginDto } from './dto/auth.dto';
 
-/**
- * AuthService handles the core authentication logic:
- *
- * 1. signup() — Hash password → create user → return JWT
- * 2. login()  — Find user → compare hash → return JWT
- *
- * Passwords are NEVER stored in plain text. bcrypt adds a random "salt"
- * to each password before hashing, so even identical passwords produce
- * different hashes. The salt rounds (10) determine computation cost —
- * higher = slower but more secure against brute force.
- */
-import { CryptoService } from '../crypto/crypto.service';
+export interface Tokens {
+  accessToken: string;
+  refreshToken: string;
+}
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
+    private readonly configService: ConfigService,
     private readonly cryptoService: CryptoService,
   ) {}
 
-  async signup(dto: SignupDto): Promise<{ accessToken: string }> {
-    // Check if a user with this email already exists
+  async signup(dto: SignupDto): Promise<Tokens> {
     const existingUser = await this.prisma.user.findUnique({
       where: { email: dto.email },
     });
@@ -39,11 +34,8 @@ export class AuthService {
       throw new ConflictException('Email already registered');
     }
 
-    // Hash the password — 10 salt rounds is the industry standard balance
-    // of security vs. performance
     const hashedPassword = await bcrypt.hash(dto.password, 10);
 
-    // Create the user row in Postgres
     const user = await this.prisma.user.create({
       data: {
         email: dto.email,
@@ -52,12 +44,12 @@ export class AuthService {
       },
     });
 
-    // Generate and return a JWT
-    return this.generateToken(user.id, user.email);
+    const tokens = await this.generateTokens(user.id, user.email);
+    await this.updateHashedRefreshToken(user.id, tokens.refreshToken);
+    return tokens;
   }
 
-  async login(dto: LoginDto): Promise<{ accessToken: string }> {
-    // Find user by email
+  async login(dto: LoginDto): Promise<Tokens> {
     const user = await this.prisma.user.findUnique({
       where: { email: dto.email },
     });
@@ -66,15 +58,51 @@ export class AuthService {
       throw new UnauthorizedException('Invalid email or password');
     }
 
-    // Compare the provided password against the stored hash
-    // bcrypt.compare() handles the salt extraction internally
     const isPasswordValid = await bcrypt.compare(dto.password, user.password);
 
     if (!isPasswordValid) {
       throw new UnauthorizedException('Invalid email or password');
     }
 
-    return this.generateToken(user.id, user.email);
+    const tokens = await this.generateTokens(user.id, user.email);
+    await this.updateHashedRefreshToken(user.id, tokens.refreshToken);
+    return tokens;
+  }
+
+  async refreshTokens(userId: string, refreshToken: string): Promise<Tokens> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user || !user.hashedRefreshToken) {
+      throw new ForbiddenException('Access Denied');
+    }
+
+    const isRefreshTokenValid = await bcrypt.compare(
+      refreshToken,
+      user.hashedRefreshToken,
+    );
+
+    if (!isRefreshTokenValid) {
+      throw new ForbiddenException('Access Denied');
+    }
+
+    const tokens = await this.generateTokens(user.id, user.email);
+    await this.updateHashedRefreshToken(user.id, tokens.refreshToken);
+    return tokens;
+  }
+
+  async logout(userId: string): Promise<boolean> {
+    await this.prisma.user.updateMany({
+      where: {
+        id: userId,
+        hashedRefreshToken: { not: null },
+      },
+      data: {
+        hashedRefreshToken: null,
+      },
+    });
+    return true;
   }
 
   async verifyTenant(userId: string, cnicNumber: string) {
@@ -125,22 +153,35 @@ export class AuthService {
     };
   }
 
-  /**
-   * Generates a signed JWT token.
-   *
-   * The payload contains:
-   * - sub: user ID (standard JWT "subject" claim)
-   * - email: for convenience in the frontend
-   *
-   * The token is signed with JWT_SECRET from .env and expires
-   * based on JWT_EXPIRES_IN (default: 7 days).
-   */
-  private generateToken(
+  private async updateHashedRefreshToken(
+    userId: string,
+    refreshToken: string,
+  ): Promise<void> {
+    const hash = await bcrypt.hash(refreshToken, 10);
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { hashedRefreshToken: hash },
+    });
+  }
+
+  private async generateTokens(
     userId: string,
     email: string,
-  ): { accessToken: string } {
+  ): Promise<Tokens> {
     const payload = { sub: userId, email };
-    const accessToken = this.jwtService.sign(payload);
-    return { accessToken };
+    const secret = this.configService.getOrThrow<string>('JWT_SECRET');
+
+    const [accessToken, refreshToken] = await Promise.all([
+      this.jwtService.signAsync(payload, {
+        secret,
+        expiresIn: '15m',
+      }),
+      this.jwtService.signAsync(payload, {
+        secret,
+        expiresIn: '7d',
+      }),
+    ]);
+
+    return { accessToken, refreshToken };
   }
 }

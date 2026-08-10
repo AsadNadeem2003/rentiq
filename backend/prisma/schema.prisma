@@ -17,6 +17,7 @@ model User {
   isVerified           Boolean        @default(false)
   cnicNumber           String?
   verificationStatus   String         @default("UNVERIFIED") // "UNVERIFIED", "PENDING", "VERIFIED"
+  hashedRefreshToken   String?
   properties           Property[]
   conversationsAsBuyer Conversation[] @relation("BuyerConversations")
   conversationsAsOwner Conversation[] @relation("OwnerConversations")

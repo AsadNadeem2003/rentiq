@@ -3,9 +3,13 @@ import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import helmet from 'helmet';
+import cookieParser from 'cookie-parser';
 import * as dns from 'dns';
 
-dns.setDefaultResultOrder('ipv4first');
+// Local dev IPv4 fix — disabled in production to avoid conflicting with cloud platform DNS
+if (process.env.NODE_ENV !== 'production') {
+  dns.setDefaultResultOrder('ipv4first');
+}
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -16,6 +20,19 @@ async function bootstrap() {
       crossOriginResourcePolicy: { policy: 'cross-origin' },
     }),
   );
+
+  // 2. Cookie Parser — enables reading HttpOnly cookies for Refresh Tokens
+  app.use(cookieParser());
+
+  // 3. Enforce HTTPS in production (redirect http to https)
+  if (process.env.NODE_ENV === 'production') {
+    app.use((req: any, res: any, next: any) => {
+      if (req.headers['x-forwarded-proto'] !== 'https') {
+        return res.redirect(`https://${req.headers.host}${req.url}`);
+      }
+      next();
+    });
+  }
 
   // Enable global validation on all incoming requests
   app.useGlobalPipes(
