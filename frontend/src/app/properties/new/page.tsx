@@ -23,6 +23,8 @@ import {
 import { toast } from "sonner";
 import { formatPakistaniCurrency } from "@/lib/utils";
 
+import { propertySchema } from "@/lib/schemas";
+
 // Dynamically import Map with SSR disabled
 const LocationPickerMap = dynamic(
   () => import("@/components/LocationPickerMap"),
@@ -38,6 +40,7 @@ export default function NewPropertyPage() {
 
   const [loading, setLoading] = useState(false);
   const [mediaFiles, setMediaFiles] = useState<File[]>([]);
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   
   const [formData, setFormData] = useState({
     title: "",
@@ -58,6 +61,7 @@ export default function NewPropertyPage() {
     const current = Number(formData.price) || 0;
     const updated = Math.min(2000000000, current + amountToAdd);
     setFormData((prev) => ({ ...prev, price: updated.toString() }));
+    if (formErrors.price) setFormErrors((prev) => ({ ...prev, price: "" }));
   };
 
   // Load saved form data on mount
@@ -83,7 +87,11 @@ export default function NewPropertyPage() {
   }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setFormData({ ...formData, [name]: value });
+    if (formErrors[name]) {
+      setFormErrors((prev) => ({ ...prev, [name]: "" }));
+    }
   };
 
   const handleTypeChange = (value: string | null) => {
@@ -100,6 +108,7 @@ export default function NewPropertyPage() {
       ...(city ? { city } : {}),
       ...(area ? { area } : {}),
     }));
+    if (formErrors.city && city) setFormErrors((prev) => ({ ...prev, city: "" }));
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -116,11 +125,42 @@ export default function NewPropertyPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Zod client validation check
+    const parsedData = {
+      title: formData.title,
+      description: formData.description,
+      price: Number(formData.price),
+      type: formData.type as "RENT" | "SALE",
+      beds: Number(formData.beds),
+      baths: Number(formData.baths),
+      city: formData.city,
+      area: formData.area || undefined,
+      isRoommateAllowed: formData.isRoommateAllowed,
+      roommatesCount: Number(formData.roommatesCount),
+      lat: formData.lat,
+      lng: formData.lng,
+    };
+
+    const validation = propertySchema.safeParse(parsedData);
+    if (!validation.success) {
+      const errorsObj: Record<string, string> = {};
+      validation.error.issues.forEach((issue) => {
+        if (issue.path[0]) {
+          errorsObj[issue.path[0].toString()] = issue.message;
+        }
+      });
+      setFormErrors(errorsObj);
+      const firstErrorMsg = validation.error.issues[0]?.message || "Please fix form validation errors";
+      toast.error(firstErrorMsg);
+      return;
+    }
+
     if (!formData.lat || !formData.lng) {
       toast.error("Please click on the map to set property location.");
       return;
     }
 
+    setFormErrors({});
     setLoading(true);
 
     try {
@@ -158,7 +198,8 @@ export default function NewPropertyPage() {
       router.push(`/properties/${response.data.id}`);
     } catch (error: any) {
       console.error("Failed to add property", error);
-      toast.error(error.response?.data?.message || "Failed to add property. Check file limits.");
+      const msg = error.response?.data?.message || "Failed to add property. Check file limits.";
+      toast.error(typeof msg === "string" ? msg : "Failed to add property.");
     } finally {
       setLoading(false);
     }
@@ -209,8 +250,13 @@ export default function NewPropertyPage() {
                   value={formData.title} 
                   onChange={handleChange} 
                   placeholder="e.g. Executive 2-Bed Furnished Apartment in DHA Phase 5" 
-                  className="h-11 rounded-xl border-slate-200 font-medium" 
+                  className={`h-11 rounded-xl font-medium transition-colors ${
+                    formErrors.title ? "border-rose-500 ring-2 ring-rose-500/20 bg-rose-50/20" : "border-slate-200"
+                  }`} 
                 />
+                {formErrors.title && (
+                  <p className="text-xs font-bold text-rose-600 animate-in fade-in-50">⚠️ {formErrors.title}</p>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -222,9 +268,14 @@ export default function NewPropertyPage() {
                   maxLength={2000}
                   value={formData.description} 
                   onChange={handleChange} 
-                  className="min-h-[120px] rounded-xl border-slate-200 font-medium resize-none" 
+                  className={`min-h-[120px] rounded-xl font-medium resize-none transition-colors ${
+                    formErrors.description ? "border-rose-500 ring-2 ring-rose-500/20 bg-rose-50/20" : "border-slate-200"
+                  }`}
                   placeholder="Describe key features, floor plan, amenities, and nearby landmarks..." 
                 />
+                {formErrors.description && (
+                  <p className="text-xs font-bold text-rose-600 animate-in fade-in-50">⚠️ {formErrors.description}</p>
+                )}
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

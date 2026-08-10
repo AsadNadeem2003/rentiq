@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 import axios from "axios";
+import { toast } from "sonner";
 
 interface AuthContextType {
   token: string | null;
@@ -60,12 +61,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   }, [refreshToken]);
 
-  // Axios response interceptor to handle 401 token expiration silently
+  // Axios response interceptor to handle 401 token expiration silently and 500/network error toasts
   useEffect(() => {
     const interceptor = axios.interceptors.response.use(
       (response) => response,
       async (error) => {
         const originalRequest = error.config;
+        
+        // 1. Silent token refresh on 401
         if (
           error.response?.status === 401 &&
           !originalRequest._retry &&
@@ -79,6 +82,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             return axios(originalRequest);
           }
         }
+
+        // 2. Global Toast notification for 500 server errors or network drops
+        if (!error.response) {
+          toast.error("Network error. Please check your internet connection.");
+        } else if (error.response.status >= 500) {
+          toast.error("Server error. Please try again in a few moments.");
+        }
+
         return Promise.reject(error);
       }
     );

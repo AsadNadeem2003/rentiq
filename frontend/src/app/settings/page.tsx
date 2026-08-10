@@ -25,6 +25,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import axios from "axios";
+import { tenantVerificationSchema } from "@/lib/schemas";
 
 export default function SettingsPage() {
   const { token, user, isAuthenticated } = useAuth();
@@ -32,8 +33,9 @@ export default function SettingsPage() {
 
   const [activeTab, setActiveTab] = useState<"profile" | "verification" | "preferences" | "notifications" | "security">("profile");
 
-  // Verification States
+  // Verification States & Zod Error
   const [cnic, setCnic] = useState("");
+  const [cnicError, setCnicError] = useState<string | null>(null);
   const [isVerified, setIsVerified] = useState(false);
   const [verifying, setVerifying] = useState(false);
 
@@ -92,12 +94,24 @@ export default function SettingsPage() {
     }
   }, [isAuthenticated, router, token, user]);
 
+  const handleCnicChange = (val: string) => {
+    setCnic(val);
+    if (cnicError) setCnicError(null);
+  };
+
   const handleVerifyTenant = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!cnic || cnic.trim().length < 13) {
-      toast.error("Please enter a valid 13-digit CNIC number (e.g. 35201-xxxxxxx-x)");
+    
+    // Zod validation check
+    const validation = tenantVerificationSchema.safeParse({ cnicNumber: cnic });
+    if (!validation.success) {
+      const issue = validation.error.issues[0]?.message || "Invalid CNIC format";
+      setCnicError(issue);
+      toast.error(issue);
       return;
     }
+
+    setCnicError(null);
     setVerifying(true);
     try {
       await axios.patch(
@@ -107,9 +121,10 @@ export default function SettingsPage() {
       );
       setIsVerified(true);
       toast.success("Identity verified successfully! 'Verified Renter' badge unlocked 🛡️");
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      toast.error("Failed to submit verification. Please try again.");
+      const msg = err?.response?.data?.message || "Failed to submit verification. Please try again.";
+      toast.error(typeof msg === "string" ? msg : "Failed to submit verification.");
     } finally {
       setVerifying(false);
     }
@@ -444,13 +459,25 @@ export default function SettingsPage() {
                             id="cnicNumber"
                             type="text"
                             value={cnic}
-                            onChange={(e) => setCnic(e.target.value)}
+                            onChange={(e) => handleCnicChange(e.target.value)}
                             placeholder="35201-1234567-1"
-                            className="pl-10 h-11 rounded-xl border-slate-200 focus-visible:ring-emerald-500 font-mono text-sm"
+                            className={`pl-10 h-11 rounded-xl font-mono text-sm transition-colors ${
+                              cnicError
+                                ? "border-rose-500 ring-2 ring-rose-500/20 bg-rose-50/20"
+                                : "border-slate-200 focus-visible:ring-emerald-500"
+                            }`}
                             required
                           />
                         </div>
-                        <p className="text-[11px] text-slate-400">Enter your 13-digit CNIC number. Your data is encrypted and secure.</p>
+                        {cnicError ? (
+                          <p className="text-xs font-bold text-rose-600 flex items-center gap-1 animate-in fade-in-50">
+                            ⚠️ {cnicError}
+                          </p>
+                        ) : (
+                          <p className="text-[11px] text-slate-400">
+                            Enter your 13-digit CNIC number. Your data is encrypted and secure.
+                          </p>
+                        )}
                       </div>
 
                       <div className="pt-2 flex justify-end">
