@@ -70,8 +70,8 @@ async function bootstrap() {
   // API prefix: all routes become /api/auth/..., /api/properties/...
   app.setGlobalPrefix('api');
 
-  // 2. Swagger Production Guard — only expose API docs route in development
-  if (process.env.NODE_ENV !== 'production') {
+  // 2. Swagger Production Guard — expose API docs route in dev OR when ENABLE_SWAGGER=true
+  if (process.env.NODE_ENV !== 'production' || process.env.ENABLE_SWAGGER === 'true') {
     const config = new DocumentBuilder()
       .setTitle('Rentiq (KirayaPad) API')
       .setDescription(
