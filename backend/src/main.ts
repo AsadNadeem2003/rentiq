@@ -47,8 +47,10 @@ async function bootstrap() {
     catch(exception: any, host: any) {
       const ctx = host.switchToHttp();
       const response = ctx.getResponse();
-      console.error('CRITICAL BACKEND ERROR:', exception);
       const status = exception?.getStatus ? exception.getStatus() : 500;
+      if (status >= 500) {
+        console.error('CRITICAL BACKEND ERROR:', exception);
+      }
       const message =
         exception?.response || exception?.message || 'Internal server error';
       response
@@ -67,8 +69,8 @@ async function bootstrap() {
     credentials: true,
   });
 
-  // API prefix: all routes become /api/auth/..., /api/properties/...
-  app.setGlobalPrefix('api');
+  // API prefix: all routes become /api/auth/..., /api/properties/... (except root / for health checks)
+  app.setGlobalPrefix('api', { exclude: ['/'] });
 
   // 2. Swagger Production Guard — expose API docs route in dev OR when ENABLE_SWAGGER=true
   if (process.env.NODE_ENV !== 'production' || process.env.ENABLE_SWAGGER === 'true') {
