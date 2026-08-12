@@ -79,13 +79,13 @@ export default function LoginPage() {
             </div>
           </CardContent>
           <CardFooter className="flex flex-col gap-4">
-            <Button className="w-full bg-[#00A664] hover:bg-[#008C54] text-white font-semibold py-2.5 shadow-sm transition-colors" type="submit" disabled={loading}>
+            <Button className="w-full font-bold bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg" type="submit" disabled={loading}>
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Sign In
             </Button>
             <div className="text-sm text-center text-gray-500">
               Don't have an account?{" "}
-              <Link href="/signup" className="text-[#00A664] font-semibold hover:underline">
+              <Link href="/signup" className="text-emerald-700 font-semibold hover:underline">
                 Sign up
               </Link>
             </div>
