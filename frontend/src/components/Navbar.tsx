@@ -23,8 +23,8 @@ export default function Navbar() {
     <nav className="border-b border-gray-100 bg-white shadow-xs sticky top-0 z-50">
       {/* Top bar */}
       <div className="h-16 flex items-center px-4 md:px-6 justify-between">
-        <Link href="/feed" className="flex items-center gap-2 text-2xl font-extrabold text-emerald-700 tracking-tight">
-          <span className="flex items-center justify-center w-8 h-8 rounded-lg bg-emerald-600 text-white text-lg font-black shadow-xs">
+        <Link href="/feed" className="flex items-center gap-2 text-2xl font-extrabold text-[#00A664] tracking-tight">
+          <span className="flex items-center justify-center w-8 h-8 rounded-lg bg-[#00A664] text-white text-lg font-black shadow-xs">
             R
           </span>
           Rentiq
@@ -59,15 +59,15 @@ export default function Navbar() {
               </Link>
 
               <Link href="/properties/new">
-                <Button size="sm" className="gap-2 font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs rounded-lg px-4 h-9">
+                <Button size="sm" className="gap-2 font-bold bg-[#00A664] hover:bg-[#008C54] text-white shadow-xs rounded-lg px-4 h-9 transition-colors">
                   <Plus size={18} strokeWidth={2.5} /> Post Listing
                 </Button>
               </Link>
 
               <DropdownMenu>
-                <DropdownMenuTrigger className="outline-none focus:ring-2 focus:ring-emerald-500 rounded-full cursor-pointer ml-1">
-                  <Avatar className="h-9 w-9 bg-emerald-100 text-emerald-700 border border-emerald-200">
-                    <AvatarFallback className="text-emerald-700 font-bold"><User size={18} /></AvatarFallback>
+                <DropdownMenuTrigger className="outline-none focus:ring-2 focus:ring-[#00A664] rounded-full cursor-pointer ml-1">
+                  <Avatar className="h-9 w-9 bg-emerald-100 text-[#00A664] border border-emerald-200">
+                    <AvatarFallback className="text-[#00A664] font-bold"><User size={18} /></AvatarFallback>
                   </Avatar>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-44 p-1.5 rounded-xl shadow-lg border-gray-100">
@@ -84,7 +84,7 @@ export default function Navbar() {
                 Log in
               </Link>
               <Link href="/signup">
-                <Button className="font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs rounded-lg px-4 h-9">
+                <Button className="font-bold bg-[#00A664] hover:bg-[#008C54] text-white shadow-xs rounded-lg px-4 h-9 transition-colors">
                   Sign up
                 </Button>
               </Link>
