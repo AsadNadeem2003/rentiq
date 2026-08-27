@@ -11,7 +11,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { User, Plus, MessageCircle, Activity, Settings, LogOut, Menu, X } from "lucide-react";
+import { User, Plus, MessageCircle, Activity, Settings, LogOut, Menu, X, BookOpen } from "lucide-react";
 import { useState } from "react";
 
 export default function Navbar() {
@@ -23,8 +23,8 @@ export default function Navbar() {
     <nav className="border-b border-gray-100 bg-white shadow-xs sticky top-0 z-50">
       {/* Top bar */}
       <div className="h-16 flex items-center px-4 md:px-6 justify-between">
-        <Link href="/feed" className="flex items-center gap-2 text-2xl font-extrabold text-[#00A664] tracking-tight">
-          <span className="flex items-center justify-center w-8 h-8 rounded-lg bg-[#00A664] text-white text-lg font-black shadow-xs">
+        <Link href="/feed" className="flex items-center gap-2 text-2xl font-extrabold text-emerald-700 tracking-tight">
+          <span className="flex items-center justify-center w-8 h-8 rounded-lg bg-emerald-600 text-white text-lg font-black shadow-xs">
             R
           </span>
           Rentiq
@@ -34,6 +34,9 @@ export default function Navbar() {
         <div className="hidden md:flex items-center gap-2 md:gap-4 text-sm font-semibold">
           <Link href="/feed" className="text-gray-600 hover:text-emerald-700 transition-colors px-3 py-1.5 rounded-lg hover:bg-emerald-50/60">
             Feed
+          </Link>
+          <Link href="/docs" className="text-gray-600 hover:text-emerald-700 transition-colors px-3 py-1.5 rounded-lg hover:bg-emerald-50/60 flex items-center gap-1.5">
+            <BookOpen size={16} /> Docs
           </Link>
           {isAuthenticated ? (
             <>
@@ -59,15 +62,15 @@ export default function Navbar() {
               </Link>
 
               <Link href="/properties/new">
-                <Button size="sm" className="gap-2 font-bold bg-[#00A664] hover:bg-[#008C54] text-white shadow-xs rounded-lg px-4 h-9 transition-colors">
+                <Button size="sm" className="gap-2 font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs rounded-lg px-4 h-9">
                   <Plus size={18} strokeWidth={2.5} /> Post Listing
                 </Button>
               </Link>
 
               <DropdownMenu>
-                <DropdownMenuTrigger className="outline-none focus:ring-2 focus:ring-[#00A664] rounded-full cursor-pointer ml-1">
-                  <Avatar className="h-9 w-9 bg-emerald-100 text-[#00A664] border border-emerald-200">
-                    <AvatarFallback className="text-[#00A664] font-bold"><User size={18} /></AvatarFallback>
+                <DropdownMenuTrigger className="outline-none focus:ring-2 focus:ring-emerald-500 rounded-full cursor-pointer ml-1">
+                  <Avatar className="h-9 w-9 bg-emerald-100 text-emerald-700 border border-emerald-200">
+                    <AvatarFallback className="text-emerald-700 font-bold"><User size={18} /></AvatarFallback>
                   </Avatar>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-44 p-1.5 rounded-xl shadow-lg border-gray-100">
@@ -84,7 +87,7 @@ export default function Navbar() {
                 Log in
               </Link>
               <Link href="/signup">
-                <Button className="font-bold bg-[#00A664] hover:bg-[#008C54] text-white shadow-xs rounded-lg px-4 h-9 transition-colors">
+                <Button className="font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs rounded-lg px-4 h-9">
                   Sign up
                 </Button>
               </Link>
@@ -123,6 +126,14 @@ export default function Navbar() {
             className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold text-gray-700 hover:bg-emerald-50 hover:text-emerald-700 transition-colors"
           >
             Feed
+          </Link>
+
+          <Link
+            href="/docs"
+            onClick={() => setMobileOpen(false)}
+            className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold text-gray-700 hover:bg-emerald-50 hover:text-emerald-700 transition-colors"
+          >
+            <BookOpen size={16} /> Documentation
           </Link>
 
           {isAuthenticated ? (
