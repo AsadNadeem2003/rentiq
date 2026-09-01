@@ -8,11 +8,13 @@
 
 **Rentiq (KirayaPad)** is a Peer-to-Peer (P2P) Property Rental & Sales platform designed specifically for the Pakistani real estate market.
 
-- **Frontend:** Next.js 15 (App Router, React 19, TypeScript, Tailwind CSS, Lucide Icons, Sonner Toasts, Zod Validation) — Runs on `http://localhost:3000`
-- **Backend:** NestJS 10 (TypeScript, Prisma ORM, Class Validator, Socket.io, Multer, Crypto, Throttler, Helmet, CookieParser) — Runs on `http://localhost:3001/api`
-- **Database:** PostgreSQL with Row Level Security (RLS) policies (Hosted on Supabase / Local)
+- **Frontend:** Next.js 15 (App Router, React 19, TypeScript, Tailwind CSS, Lucide Icons, Sonner Toasts, Zod Validation) — Local: `http://localhost:3000` | Live: `https://rentiq-snowy.vercel.app`
+- **Backend:** NestJS 10 (TypeScript, Prisma ORM, Class Validator, Socket.io, Multer, Crypto, Throttler, Helmet, CookieParser) — Local: `http://localhost:3001/api` | Live: `https://rentiq-backend-qmd6.onrender.com/api`
+- **Client Docs Portal:** Interactive React-docs style documentation at `/docs` (`https://rentiq-snowy.vercel.app/docs`)
+- **Database:** PostgreSQL with Row Level Security (RLS) policies (Hosted on Supabase)
 - **Storage:** Supabase Storage (Bucket: `properties`)
 - **Real-Time Communications:** Socket.io (Port 3001)
+- **Uptime Automation:** 10-minute ping job via `cron-job.org` pointing to `https://rentiq-backend-qmd6.onrender.com/` (eliminates 50-second cold starts)
 
 ---
 
